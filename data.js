@@ -9,7 +9,7 @@ const SRC = {
   notesFlow: ["Traffic-flow notes (unpublished)", null, "local"],
   history: ["Protocol history report (unpublished)", null, "local"],
   cores: ["Proxy cores catalog (unpublished)", null, "local"],
-  bench: ["Client-app benchmark (Setup guide tab)", "index.html#setup", "data"],
+  bench: ["Client-app benchmark (Routes tab)", "index.html#setup", "data"],
   battery: ["iOS VPN battery fact-check (unpublished)", null, "local"],
 
   // Papers and measurements
