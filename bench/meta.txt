@@ -1,0 +1,9 @@
+model=MacBookAir10,1 cpu=Apple M1
+app anywhere=2.3 (393)
+app sfm=1.15.0-alpha.12 (1)
+app happ=6.1.0 (2610091518)
+app v2box=10.1.9 (143)
+app shadowrocket=2.2.92 (3445)
+app egern=2.20.0 (783)
+app karing=1.2.25 (2802)
+app rabbithole=1.6.0 (224)

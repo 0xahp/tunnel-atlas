@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tunnel Atlas</title>
+<meta name="description" content="Every VPN and proxy technique from 1995 to 2026, with its 2026 censorship status, connection type and power estimate; the 2026 picks with their traffic flow; and a live Mac benchmark of VLESS client apps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Martian+Mono:wdth,wght@87.5,300;87.5,500;100,700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<header class="mast">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Tunnel Atlas</a>
+  <p class="mast-sub">VPN and proxy techniques, 1995 to 2026 · status as of Oct 2026</p>
+  <nav class="mast-tools" aria-label="Site">
+    <a class="tool-link" href="sources.html">Sources</a>
+    <button class="tool-link" id="theme-btn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  </nav>
+</header>
+
+<div class="shell">
+  <nav class="rail" aria-label="Sections">
+    <div class="rail-tabs" role="tablist" aria-orientation="vertical">
+      <button role="tab" id="tab-timeline" aria-controls="timeline" aria-selected="true">
+        <span class="tab-name">Timeline</span><span class="tab-hint">58 techniques, newest first</span></button>
+      <button role="tab" id="tab-setup" aria-controls="setup" aria-selected="false" tabindex="-1">
+        <span class="tab-name">Setup guide</span><span class="tab-hint">protocol, path and client app</span></button>
+    </div>
+    <p class="rail-foot">Every figure links to its source on the <a href="sources.html">sources page</a>.</p>
+  </nav>
+
+  <main>
+    <section id="timeline" role="tabpanel" aria-labelledby="tab-timeline">
+      <div class="tl-head">
+        <h1>Scroll back through thirty years of tunnels</h1>
+        <p class="lede">Each technique sits where it first shipped, newest on the left. Under the read line you get its
+          2026 status in four censored countries, how it connects, and an estimate of its battery cost.</p>
+        <div class="legend" id="tl-legend"></div>
+      </div>
+      <div class="tl-scroll" id="tl-scroll">
+        <div class="tl-frame" id="tl-frame">
+          <div class="tl-window" id="tl-window">
+            <div class="tl-track" id="tl-track"></div>
+            <div class="tl-now" id="tl-now" aria-hidden="true"></div>
+            <div class="tl-lanes-labels" id="tl-lane-labels" aria-hidden="true"></div>
+            <div class="tl-cursor"><span id="tl-cursor-year" aria-live="polite"></span></div>
+          </div>
+          <article class="readout" id="tl-readout"></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="setup" role="tabpanel" aria-labelledby="tab-setup" hidden>
+      <div class="sec-head">
+        <h1>What to run in 2026, and the path it takes</h1>
+        <p class="lede">Pick your situation. Each pick shows who sees what on the way from your device to the website. Below that, which client app runs VLESS at the lowest cost.</p>
+      </div>
+      <div class="pick-controls">
+        <div class="seg" id="pk-goal" role="radiogroup" aria-label="Situation"></div>
+      </div>
+      <div class="pick-body">
+        <ol class="pick-list" id="pk-list"></ol>
+        <div class="flow" id="pk-flow"></div>
+      </div>
+      <p class="note" id="pk-note"></p>
+
+      <div class="bench" id="bench">
+        <div class="sec-head">
+          <h2 class="sec-h2">Which VLESS client app costs the least?</h2>
+          <p class="lede" id="bn-lede">Client apps send the same VLESS + REALITY traffic through the same server on one Mac. The ranking is about cost: power, CPU, memory and wakeups.</p>
+        </div>
+        <div id="bn-body"><p class="note">Loading benchmark results…</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script src="site.js"></script>
+</body>
+</html>

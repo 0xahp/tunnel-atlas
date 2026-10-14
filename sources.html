@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tunnel Atlas Sources</title>
+<meta name="description" content="The references behind Tunnel Atlas: papers, field reports, specifications and code, plus key figures, censorship status by country, and the claims that were checked.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Martian+Mono:wdth,wght@87.5,300;87.5,500;100,700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<header class="mast">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Tunnel Atlas</a>
+  <p class="mast-sub">Sources · status as of Oct 2026</p>
+  <nav class="mast-tools" aria-label="Site">
+    <a class="tool-link" href="index.html">Back to atlas</a>
+    <button class="tool-link" id="theme-btn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  </nav>
+</header>
+
+<main class="doc">
+  <div class="doc-head">
+    <h1>Sources</h1>
+    <p class="lede">The references behind every figure on the atlas, followed by the facts that didn't fit on the main page.</p>
+    <nav class="doc-toc" aria-label="On this page">
+      <a href="#references">References</a>
+      <a href="#figures">Key figures</a>
+      <a href="#censorship">Censorship status, 2026</a>
+      <a href="#claims">Claims checked</a>
+      <a href="#notes">Notes and limits</a>
+    </nav>
+  </div>
+
+  <section class="doc-sec" id="references">
+    <h2>References</h2>
+    <label class="ro-label" for="ref-q">Filter</label>
+    <input class="ref-search" id="ref-q" type="search" placeholder="Title, site or topic" autocomplete="off">
+    <div id="ref-groups"></div>
+    <p class="note" id="ref-empty" hidden>No reference matches that filter.</p>
+  </section>
+
+  <section class="doc-sec" id="figures">
+    <h2>Key figures</h2>
+    <div class="table-wrap" id="fig-table"></div>
+  </section>
+
+  <section class="doc-sec" id="censorship">
+    <h2>Censorship status, 2026</h2>
+    <p>Mostly user reports on net4people, often from one ISP and a few people. Hollow squares mark reports that are unconfirmed.</p>
+    <div class="table-wrap" id="mx-table"></div>
+  </section>
+
+  <section class="doc-sec" id="claims">
+    <h2>Claims checked</h2>
+    <p>Common claims about iPhone VPN battery use and app internals, checked against code, Apple documentation and measurements.</p>
+    <div class="table-wrap" id="claim-table"></div>
+  </section>
+
+  <section class="doc-sec" id="notes">
+    <h2>Notes and limits</h2>
+    <ul class="doc-notes" id="notes-list"></ul>
+  </section>
+</main>
+
+<script src="data.js"></script>
+<script src="sources.js"></script>
+</body>
+</html>

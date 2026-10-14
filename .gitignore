@@ -1,0 +1,11 @@
+# Only the site files belong here. Never add configs, notes or reports.
+.DS_Store
+*.md
+!README.md
+reports/
+research_notes/
+*.json
+!bench/summary.json
+*.env
+*.key
+*.pem
