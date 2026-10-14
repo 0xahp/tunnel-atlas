@@ -80,8 +80,6 @@ const Timeline = {
   init() {
     this.items = TECHS.slice().sort((a, b) => b.y - a.y || CLS_ORDER[a.cls] - CLS_ORDER[b.cls] || a.name.localeCompare(b.name));
     $("#tl-legend").innerHTML = `
-      <div><b>2026</b>${stCell({ s: "ok" }, "IR")}works ${stCell({ s: "deg" }, "IR")}degraded ${stCell({ s: "blk" }, "IR")}blocked
-        ${stCell({ s: "blk", inf: true }, "IR")}inferred ${stCell({ s: "unk" }, "IR")}no data</div>
       <div><b>Link</b>${wave("tcp")}TCP ${wave("quic")}QUIC ${wave("udp")}UDP</div>
       <div><b>Power</b>${meter(1)} low … ${meter(4)} highest (estimate)</div>`;
     const track = $("#tl-track");

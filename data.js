@@ -796,7 +796,7 @@ const NUMBERS = [
 const POWER_TIERS = [
   null,
   { label: "Low", desc: "Kernel data path, or sends nothing when idle." },
-  { label: "Moderate", desc: "A userspace app with its own TCP/IP stack moves every packet. No phone measurement exists." },
+  { label: "Moderate", desc: "A userspace app with its own TCP/IP stack moves every packet." },
   { label: "High", desc: "Userspace QUIC or UDP: one system call per packet and more CPU per byte (4–12× REALITY in a field test)." },
   { label: "Highest", desc: "Measured high in the 2022 phone test, or keeps the radio busy (relays, constant small packets)." }
 ];
