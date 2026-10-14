@@ -7,23 +7,29 @@ const srcLinks = (keys) => `<div class="src-list">${[...new Set(keys || [])].fil
   .map((k) => `<a href="${esc(SRC[k][1])}"${/^https?:/.test(SRC[k][1]) ? ' target="_blank" rel="noopener"' : ""}>${esc(SRC[k][0])}</a>`).join("")}</div>`;
 
 /* ---------- Theme ---------- */
+const themeBtn = $("#theme-btn");
 function effectiveTheme() {
   const t = document.documentElement.dataset.theme;
   return t || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 }
-$("#theme-btn").addEventListener("click", () => {
+/* the button names the theme it switches to */
+const labelTheme = () => { themeBtn.textContent = effectiveTheme() === "dark" ? "Light" : "Dark"; };
+labelTheme();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", labelTheme);
+themeBtn.addEventListener("click", () => {
   const next = effectiveTheme() === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("theme", next); } catch (e) {}
+  labelTheme();
 });
 
 /* ---------- Tabs ---------- */
-const TABS = ["timeline", "setup"];
+const TABS = ["setup", "timeline"];
 const rendered = {};
 function showTab(id, focus) {
   const toBench = id === "bench";
   if (id === "picks" || toBench) id = "setup"; // old links
-  if (!TABS.includes(id)) id = "timeline";
+  if (!TABS.includes(id)) id = "setup";
   for (const t of TABS) {
     const on = t === id, btn = $("#tab-" + t);
     btn.setAttribute("aria-selected", on);
@@ -34,7 +40,7 @@ function showTab(id, focus) {
   if (!rendered[id]) { rendered[id] = true; ({ timeline: Timeline, setup: Picks })[id].init(); }
   if (id === "timeline") Timeline.layout();
   if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
-  if (toBench) { Bench.jump = true; $("#bench").scrollIntoView(); }
+  if (toBench && $("#bench")) { Bench.jump = true; $("#bench").scrollIntoView(); }
 }
 for (const t of TABS) $("#tab-" + t).addEventListener("click", () => { showTab(t); window.scrollTo(0, 0); });
 $(".rail-tabs").addEventListener("keydown", (e) => {
@@ -224,7 +230,7 @@ const Picks = {
     seg($("#pk-goal"), GOALS, "goal");
     $("#pk-list").addEventListener("click", (e) => { const b = e.target.closest(".pick"); if (b) { this.idx = +b.dataset.i; this.render(); } });
     this.render();
-    Bench.init();
+    if ($("#bench")) Bench.init();
   },
   render() {
     $("#pk-goal").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.goal));
@@ -424,4 +430,4 @@ const Bench = {
 function niceStep(raw) { const p = 10 ** Math.floor(Math.log10(raw || 1)), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
 
-showTab(location.hash.slice(1) || "timeline");
+showTab(location.hash.slice(1) || "setup");

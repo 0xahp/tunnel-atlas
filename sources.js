@@ -3,11 +3,20 @@
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 
-$("#theme-btn").addEventListener("click", () => {
-  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  const next = cur === "dark" ? "light" : "dark";
+const themeBtn = $("#theme-btn");
+function effectiveTheme() {
+  const t = document.documentElement.dataset.theme;
+  return t || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+/* the button names the theme it switches to */
+const labelTheme = () => { themeBtn.textContent = effectiveTheme() === "dark" ? "Light" : "Dark"; };
+labelTheme();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", labelTheme);
+themeBtn.addEventListener("click", () => {
+  const next = effectiveTheme() === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("theme", next); } catch (e) {}
+  labelTheme();
 });
 
 const link = (k) => {

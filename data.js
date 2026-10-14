@@ -599,7 +599,7 @@ const PICKS = {
     items: [
       { rank: "1st · lowest battery", proto: "WireGuard, keepalive off", why: "Lowest battery cost of five VPNs in the only phone test (+32%), and silent when idle unless PersistentKeepalive is on. Leave keepalive off unless you're behind a strict NAT.", src: ["fed4fire", "wgquick", "wgproto"] },
       { rank: "2nd · built in", proto: "IKEv2/IPsec (AES-GCM)", why: "Encrypts inside the system kernel, so no app process copies each packet. Lowest CPU in the 2020 lab (~42% at ~1 Gbit/s). Apple devices default to AES-CBC; AES-256-GCM needs a configuration profile.", src: ["os3", "battery"] },
-      { rank: "If you need a proxy", proto: "VLESS + REALITY (or Shadowsocks 2022)", why: "Low server CPU per GB in a 2026 field test; Shadowsocks 2022 was the fastest proxy protocol on loopback. The client app matters as much as the protocol: see the app benchmark below.", src: ["notesPerf", "tachyon"] }
+      { rank: "If you need a proxy", proto: "VLESS + REALITY (or Shadowsocks 2022)", why: "Low server CPU per GB in a 2026 field test; Shadowsocks 2022 was the fastest proxy protocol on loopback. The client app matters as much as the protocol.", src: ["notesPerf", "tachyon"] }
     ],
     note: "Efficiency rankings come from lab and phone tests of VPN protocols. Nobody has measured phone battery for proxy protocols."
   },

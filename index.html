@@ -16,7 +16,6 @@
   <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Tunnel Atlas</a>
   <p class="mast-sub">VPN and proxy techniques, 1995 to 2026 · status as of Oct 2026</p>
   <nav class="mast-tools" aria-label="Site">
-    <a class="tool-link" href="sources.html">Sources</a>
     <button class="tool-link" id="theme-btn" type="button" aria-label="Switch light or dark theme">Theme</button>
   </nav>
 </header>
@@ -24,16 +23,16 @@
 <div class="shell">
   <nav class="rail" aria-label="Sections">
     <div class="rail-tabs" role="tablist" aria-orientation="vertical">
-      <button role="tab" id="tab-timeline" aria-controls="timeline" aria-selected="true">
+      <button role="tab" id="tab-setup" aria-controls="setup" aria-selected="true">
+        <span class="tab-name">Setup comparison</span><span class="tab-hint">best protocol and its path</span></button>
+      <button role="tab" id="tab-timeline" aria-controls="timeline" aria-selected="false" tabindex="-1">
         <span class="tab-name">Timeline</span><span class="tab-hint">58 techniques, newest first</span></button>
-      <button role="tab" id="tab-setup" aria-controls="setup" aria-selected="false" tabindex="-1">
-        <span class="tab-name">Setup guide</span><span class="tab-hint">protocol, path and client app</span></button>
     </div>
     <p class="rail-foot">Every figure links to its source on the <a href="sources.html">sources page</a>.</p>
   </nav>
 
   <main>
-    <section id="timeline" role="tabpanel" aria-labelledby="tab-timeline">
+    <section id="timeline" role="tabpanel" aria-labelledby="tab-timeline" hidden>
       <div class="tl-head">
         <h1>Scroll back through thirty years of tunnels</h1>
         <p class="lede">Each technique sits where it first shipped, newest on the left. Under the read line you get its
@@ -53,10 +52,10 @@
       </div>
     </section>
 
-    <section id="setup" role="tabpanel" aria-labelledby="tab-setup" hidden>
+    <section id="setup" role="tabpanel" aria-labelledby="tab-setup">
       <div class="sec-head">
         <h1>What to run in 2026, and the path it takes</h1>
-        <p class="lede">Pick your situation. Each pick shows who sees what on the way from your device to the website. Below that, which client app runs VLESS at the lowest cost.</p>
+        <p class="lede">Pick your situation and compare the top setups. Each one shows who sees what on the way from your device to the website.</p>
       </div>
       <div class="pick-controls">
         <div class="seg" id="pk-goal" role="radiogroup" aria-label="Situation"></div>
@@ -66,15 +65,8 @@
         <div class="flow" id="pk-flow"></div>
       </div>
       <p class="note" id="pk-note"></p>
-
-      <div class="bench" id="bench">
-        <div class="sec-head">
-          <h2 class="sec-h2">Which VLESS client app costs the least?</h2>
-          <p class="lede" id="bn-lede">Client apps send the same VLESS + REALITY traffic through the same server on one Mac. The ranking is about cost: power, CPU, memory and wakeups.</p>
-        </div>
-        <div id="bn-body"><p class="note">Loading benchmark results…</p></div>
-      </div>
     </section>
+    <p class="site-foot">Every figure links to its source on the <a href="sources.html">sources page</a>.</p>
   </main>
 </div>
 
