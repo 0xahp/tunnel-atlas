@@ -229,6 +229,16 @@ tr.lead td { background: var(--accent-soft); }
 .rk.r1 { background: var(--ok); color: var(--panel); }
 .rk.rmid { background: var(--grid); color: var(--ink-2); }
 .rk.rlast { box-shadow: inset 0 0 0 1px var(--blk); color: var(--blk); }
+.bn-table th.grp { text-align: center; color: var(--ink-2); border-bottom: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.bn-table th span { display: block; margin-top: 3px; text-transform: none; letter-spacing: 0; color: var(--muted); font-weight: 400; }
+.bn-table td.best { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); font-weight: 600; }
+.bn-table td.worst { color: var(--blk); }
+.bn-table td.na { color: var(--muted); }
+.bn-table .who { position: sticky; left: 0; background: var(--paper); }
+.bn-table td.who .note { display: block; font-size: 11px; }
+.bn-table tr.lead td.who { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--paper); }
+.key.best { color: var(--ok); font-weight: 600; }
+.key.worst { color: var(--blk); font-weight: 600; }
 .ranges { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 26px 36px; }
 .range { display: grid; gap: 6px; min-width: 0; }
 .range h3 { font: 600 14px/1.3 var(--f-body); }

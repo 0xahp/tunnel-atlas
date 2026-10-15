@@ -288,32 +288,18 @@ const Picks = {
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole" };
 const BENCH_APP_NOTES = { anywhere: "Anywhere", sfm: "sing-box for Apple", karing: "Karing", shadowrocket: "Shadowrocket", egern: "Egern" };
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
-const BENCH_TABS = { A: "Daily setup: chain + rules", B: "Simple setup: one hop", C: "Lab: top speed" };
-// [title, unit, case, metric, scale, higher is better]
-const IDLE = (c) => ["Idle", [
-  ["Idle wakeups", "times per second the app wakes the CPU", c, "tunnel_wakeups_per_s", 1],
-  ["Idle power", "app only · µW", c, "tunnel_power_w", 1e6]]];
-const AT100 = ["At 100 Mbit/s download", [
-  ["Power at 100 Mbit/s", "app only · mW", "dl_100m", "tunnel_power_w", 1e3],
-  ["Energy per GB at 100 Mbit/s", "app only · joules", "dl_100m", "tunnel_energy_per_gb", 1],
-  ["CPU at 100 Mbit/s", "app only · % of one core", "dl_100m", "tunnel_cpu_pct", 1],
-  ["Whole-Mac energy per GB", "battery sensor · joules", "dl_100m", "pstr_energy_per_gb", 1]]];
-const BENCH_CARDS = {
-  A: [IDLE("idle"), AT100,
-    ["Full speed", [
-      ["Top download speed", "Mbit/s · the path tops out near 182", "dl_max", "mbps", 1, true],
-      ["Energy per GB at full speed", "app only · joules", "dl_max", "tunnel_energy_per_gb", 1]]],
-    ["Web pages", [
-      ["Foreign pages: first byte", "50 pages · ms", "req50", "first_byte_ms", 1],
-      ["Local pages (direct): first byte", "20 pages · ms", "reqir", "first_byte_ms", 1]]]],
-  B: [IDLE("idle"), AT100,
-    ["Web pages", [["Foreign pages: first byte", "50 pages · ms", "req50", "first_byte_ms", 1]]]],
-  C: [["Top speed", [["Top upload speed", "1 stream · Gbit/s", "tcp_up_1", "gbps", 1, true]]],
-    ["At 500 Mbit/s upload", [
-      ["Power at 500 Mbit/s", "app only · mW", "tcp_up_500m", "tunnel_power_w", 1e3],
-      ["Energy per GB at 500 Mbit/s", "app only · joules", "tcp_up_500m", "tunnel_energy_per_gb", 1],
-      ["CPU at 500 Mbit/s", "app only · % of one core", "tcp_up_500m", "tunnel_cpu_pct", 1]]],
-    IDLE("idle30")]
+const BENCH_SETUPS = {
+  A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."],
+  B: ["Basic", "The simplest setup: one proxy, no rules, everything through the tunnel."],
+  C: ["Top speed", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and what it costs at a steady 500 Mbit/s. One round only, so a first look rather than a ranking."]
+};
+// table columns per setup: [group, label, unit, case, metric, scale, higher is better]
+const IDLE_COLS = (c) => [["Idle", "Wakeups", "per s", c, "tunnel_wakeups_per_s", 1], ["Idle", "Power", "µW", c, "tunnel_power_w", 1e6]];
+const LOAD_COLS = (g, c) => [[g, "Power", "mW", c, "tunnel_power_w", 1e3], [g, "Energy", "J per GB", c, "tunnel_energy_per_gb", 1], [g, "CPU", "%", c, "tunnel_cpu_pct", 1]];
+const BENCH_COLS = {
+  A: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Full speed", "Speed", "Mbit/s", "dl_max", "mbps", 1, true], ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],
+  B: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],
+  C: [["Top speed", "Upload", "Gbit/s", "tcp_up_1", "gbps", 1, true], ...LOAD_COLS("At 500 Mbit/s", "tcp_up_500m"), ...IDLE_COLS("idle30")]
 };
 const Bench = {
   exp: "A",
@@ -327,7 +313,7 @@ const Bench = {
         <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
       return;
     }
-    $("#bn-exp").innerHTML = Object.entries(BENCH_TABS).map(([id, t]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}</button>`).join("");
+    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}</button>`).join("");
     $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.render(); } });
     this.render();
     if (this.jump) { this.jump = false; $("#bench").scrollIntoView(); }
@@ -335,66 +321,46 @@ const Bench = {
   render() {
     $("#bn-exp").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.exp));
     const x = this.data.experiments.find((e) => e.id === this.exp);
-    const apps = Object.keys(x.versions);
     const name = (a) => BENCH_NAMES[a] || a;
     const ver = (a) => x.versions[a].replace(/\s*\(.*\)$/, "");
-    const stats = (ca, me) => (x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats;
+    const stats = (ca, me) => (x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {};
     const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
+    const cols = BENCH_COLS[this.exp];
+    const lb = x.leaderboard;
+    // rows: leaderboard order, or fastest first when there is no leaderboard
+    const [, , , ca0, me0] = cols[0];
+    const apps = lb ? Object.keys(lb) : Object.keys(x.versions).sort((p, q) => (stats(ca0, me0)[q] || { median: -1 }).median - (stats(ca0, me0)[p] || { median: -1 }).median);
 
-    // range plot: line = best to worst round, dot = median; green = shares first place
-    const plot = ([title, unit, ca, me, sc, hi]) => {
-      const s = stats(ca, me);
-      if (!s) return "";
-      const st = Object.entries(s).filter(([a]) => x.versions[a]).sort((p, q) => hi ? q[1].median - p[1].median : p[1].median - q[1].median);
-      const beats = hi ? (d, c) => s[d].min > s[c].max : (d, c) => s[d].max < s[c].min;
-      const first = (c) => !st.some(([d]) => d !== c && beats(d, c));
-      const missing = apps.filter((a) => !s[a]).map(name);
-      const lo = 0, top = 8, rowH = 22, L = 104, R = 396, H = top + st.length * rowH + 22;
-      const hiV = Math.max(...st.map(([, v]) => v.max * sc)) * 1.06 || 1;
-      const X = (v) => L + (v - lo) / (hiV - lo) * (R - L);
-      const step = niceStep(hiV / 4);
-      let ticks = "";
-      for (let v = 0; v <= hiV; v += step)
-        ticks += `<line class="ax" x1="${X(v)}" x2="${X(v)}" y1="${top - 4}" y2="${H - 18}"/><text class="tick" x="${X(v)}" y="${H - 5}" text-anchor="middle">${fmtNum(v)}</text>`;
-      const rows = st.map(([a, v], k) => {
-        const y = top + k * rowH + rowH / 2;
-        return `<g class="${first(a) ? "best" : ""}"><text class="lbl" x="${L - 8}" y="${y + 4}" text-anchor="end">${esc(name(a))}</text>
-          <line class="span" x1="${X(v.min * sc)}" x2="${Math.max(X(v.max * sc), X(v.min * sc) + 0.5)}" y1="${y}" y2="${y}"/>
-          <circle class="med" cx="${X(v.median * sc)}" cy="${y}" r="4"><title>${esc(name(a))}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)}` : ""}, ${v.n} round${v.n > 1 ? "s" : ""}</title></circle>
-          <text class="tick" x="${R + 8}" y="${y + 4}">${fmtNum(v.median * sc)}</text></g>`;
-      }).join("");
-      return `<div class="range"><h3>${esc(title)}</h3><span class="unit">${esc(unit)} · ${hi ? "higher" : "lower"} is better</span>
-        <svg viewBox="0 0 440 ${H}" role="img" aria-label="${esc(title)} per app">${ticks}${rows}</svg>
-        ${missing.length ? `<span class="unit">No result: ${esc(missing.join(", "))}</span>` : ""}</div>`;
+    const cell = ([, , , ca, me, sc, hi], a) => {
+      const s = stats(ca, me), v = s[a];
+      if (!v) return `<td class="num na" title="No result">–</td>`;
+      const beats = hi ? (d) => s[d].min > v.max : (d) => s[d].max < v.min;
+      const best = !Object.keys(s).some((d) => d !== a && beats(d));
+      const meds = Object.values(s).map((y) => y.median);
+      const worst = Object.keys(s).length > 2 && v.median === (hi ? Math.min(...meds) : Math.max(...meds));
+      const tip = `${name(a)}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} over ${v.n} rounds` : ""}`;
+      return `<td class="num${best ? " best" : worst ? " worst" : ""}" title="${esc(tip)}">${fmtNum(v.median * sc)}</td>`;
     };
-
-    const lb = x.leaderboard ? Object.entries(x.leaderboard) : [];
-    const rk = (v) => fmtNum(+v.toFixed(2));
-    const board = lb.length ? `<div class="bn-block"><h3>Leaderboard</h3>
-        <p>Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance. Each part is the app's average place
-          across its measures (1 = best), so lower is better. The tie-aware score counts two apps as tied when their best-to-worst rounds overlap.</p>
-        <div class="table-wrap"><table><thead><tr><th class="num">#</th><th>App</th><th class="num">Score</th><th class="num">Tie-aware</th>
-          <th class="num">Traffic</th><th class="num">Idle</th><th class="num">Performance</th></tr></thead><tbody>
-        ${lb.map(([a, v], i) => `<tr${i === 0 ? ' class="lead"' : ""}><td class="num">${i + 1}</td><td><b>${esc(name(a))}</b> <span class="note">${esc(ver(a))}</span></td>
-          <td class="num"><b>${v.score.toFixed(2)}</b></td><td class="num">${v.score_tie.toFixed(2)}</td>
-          <td class="num">${rk(v.traffic)}</td><td class="num">${rk(v.idle)}</td><td class="num">${rk(v.perf)}</td></tr>`).join("")}
-        </tbody></table></div></div>`
-      : `<div class="bn-block"><h3>No leaderboard</h3><p>One round only, so this is a first look rather than a ranking. It shows each app's own limits with no internet in the way.</p></div>`;
+    const groups = [];
+    cols.forEach(([g]) => { const last = groups[groups.length - 1]; if (last && last[0] === g) last[1]++; else groups.push([g, 1]); });
+    const lead = lb ? 3 : 1;
+    const table = `<div class="table-wrap"><table class="bn-table">
+      <thead><tr><th colspan="${lead}"></th>${groups.map(([g, n]) => `<th class="grp" colspan="${n}">${esc(g)}</th>`).join("")}</tr>
+        <tr>${lb ? `<th class="num">#</th>` : ""}<th class="who">App</th>${lb ? `<th class="num">Score</th>` : ""}${cols.map(([, l, u, , , , hi]) => `<th class="num">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></th>`).join("")}</tr></thead>
+      <tbody>${apps.map((a, i) => `<tr${lb && i === 0 ? ' class="lead"' : ""}>${lb ? `<td class="num">${i + 1}</td>` : ""}
+        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}</span></td>
+        ${lb ? `<td class="num" title="Tie-aware score ${lb[a].score_tie.toFixed(2)}"><b>${lb[a].score.toFixed(2)}</b></td>` : ""}
+        ${cols.map((c) => cell(c, a)).join("")}</tr>`).join("")}</tbody></table></div>`;
 
     const cc = this.data.chain_cost && this.data.chain_cost["dl_100m.tunnel_energy_per_gb"];
     const chain = this.exp === "A" && cc ? `<div class="bn-block"><h3>What the chain costs</h3>
-        <p>App energy per GB at 100 Mbit/s, one hop (simple setup) against chain + rules (daily setup). The two ran on different days.</p>
-        <div class="table-wrap"><table><thead><tr><th>App</th><th class="num">One hop (J)</th><th class="num">Chain + rules (J)</th><th class="num">Factor</th></tr></thead><tbody>
+        <p>App energy per GB at 100 Mbit/s, basic setup against chain + rules. The two ran on different days.</p>
+        <div class="table-wrap"><table><thead><tr><th>App</th><th class="num">Basic (J)</th><th class="num">Chain + rules (J)</th><th class="num">Factor</th></tr></thead><tbody>
         ${Object.entries(cc).map(([a, v]) => `<tr><td><b>${esc(name(a))}</b>${v.same_version ? "" : ` <span class="note">updated in between (2.3 → 2.4)</span>`}</td>
           <td class="num">${fmtNum(v.one_hop)}</td><td class="num">${fmtNum(v.chain)}</td><td class="num">${v.factor.toFixed(1)}×</td></tr>`).join("")}
         </tbody></table></div>
         <p>Anywhere 2.4 runs about a quarter of its tunnel work on the Mac's performance cores (2.3 used none), and each CPU-second there
           costs about 3× the energy. On the chain, 2.3 measured 2.2 J/GB in a one-round check, so most of its jump comes from the update.</p></div>` : "";
-
-    const cards = BENCH_CARDS[this.exp].map(([g, list]) => {
-      const html = list.map(plot).join("");
-      return html ? `<div class="bn-block"><h3>${esc(g)}</h3><div class="ranges">${html}</div></div>` : "";
-    }).join("");
 
     const appCards = apps.map((c) => {
       const a = APPS.find((y) => y.name === BENCH_APP_NOTES[c]);
@@ -404,21 +370,24 @@ const Bench = {
     }).join("");
 
     $("#bn-body").innerHTML = `
-      <div class="bn-meta"><span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>
-        <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
-        <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div>
-      <p class="bn-setup">${esc(x.setup.replace(/->/g, "→"))}${x.note ? ` ${esc(x.note)}` : ""}</p>
-      ${board}${cards}${chain}
-      <p class="note">Line = best to worst round, dot = median, number = median. Green apps share first place.
-        App power and energy come from macOS's per-process counters for the tunnel process; whole-Mac energy from the battery's power sensor.
-        Every app window was closed during the tests: an open window costs more than the tunnel itself.</p>
+      <div class="bn-block"><p class="bn-setup">${esc(BENCH_SETUPS[this.exp][1])}</p>
+        <div class="bn-meta"><span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>
+          <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
+          <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div></div>
+      <div class="bn-block"><h3>${lb ? "Leaderboard and every measure" : "Every measure"}</h3>
+        ${table}
+        <p>Each number is the app's median over all rounds; hover it for the range. ↓ lower is better, ↑ higher is better.
+          <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
+          ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
+          Power, energy and CPU are for the app's tunnel process only.${x.note ? ` ${esc(x.note)}` : ""}</p></div>
+      ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
         <div class="apps">${appCards}</div></div>` : ""}
-      <p class="note">One Mac, one network, one week of October 2026; results can change with app updates. The Mac numbers stand in for iPhone ones: same apps and code, but no phone battery was measured.</p>`;
+      <p class="note">One Mac, one network, one week of October 2026; results can change with app updates. Every app window was closed during the tests,
+        since an open window costs more than the tunnel. The Mac numbers stand in for iPhone ones: same apps and code, but no phone battery was measured.</p>`;
   }
 };
-function niceStep(raw) { const p = 10 ** Math.floor(Math.log10(raw || 1)), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
 
 showTab(location.hash.slice(1) || "setup");
