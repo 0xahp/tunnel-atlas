@@ -291,7 +291,7 @@ const BENCH_SETUPS = {
   C: ["Top speed", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and what it costs at a steady 500 Mbit/s. One round only, so a first look rather than a ranking."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better]
-const IDLE_COLS = (c) => [["Idle", "Wakeups", "per s", c, "tunnel_wakeups_per_s", 1], ["Idle", "Power", "µW", c, "tunnel_power_w", 1e6]];
+const IDLE_COLS = (c) => [["Idle", "Wakeups", "per s", c, "tunnel_wakeups_per_s", 1], ["Idle", "Avg power", "µW", c, "tunnel_power_w", 1e6]];
 const LOAD_COLS = (g, c) => [[g, "Power", "mW", c, "tunnel_power_w", 1e3], [g, "Energy", "J per GB", c, "tunnel_energy_per_gb", 1], [g, "CPU", "%", c, "tunnel_cpu_pct", 1]];
 const BENCH_COLS = {
   A: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Full speed", "Speed", "Mbit/s", "dl_max", "mbps", 1, true], ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],

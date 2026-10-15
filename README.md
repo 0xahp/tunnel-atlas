@@ -39,11 +39,11 @@ Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance;
 **What held across the setups**
 
 - Egern used the least CPU and energy per GB in both real-network setups.
-- Anywhere woke the CPU least when idle in both real-network setups, but in Chain + rules (after its 2.4 update) its idle power was the highest.
+- Anywhere woke the CPU least when idle in both real-network setups, but in Chain + rules (after its 2.4 update) its average idle power was the highest.
 - Happ and V2Box ranked last in the Basic setup and were the two slowest in the top-speed test.
 - For the whole Mac, the apps were within a few percent of each other.
 
-**[See every measure for all three setups →](https://0xahp.github.io/tunnel-atlas/#bench)** idle power, power and CPU under load, top speed and time to first byte, with app versions.
+**[See every measure for all three setups →](https://0xahp.github.io/tunnel-atlas/#bench)** average idle power, power and CPU under load, top speed and time to first byte, with app versions.
 
 <sub>Footnote: this is not a professional lab test, just a personal, nerdy-interest one: one Mac on Wi-Fi, a few days, a handful of rounds. On a phone over cellular the results may differ.</sub>
 
