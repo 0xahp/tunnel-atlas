@@ -47,6 +47,7 @@ const SRC = {
   xray6121: ["Xray #6121 (REALITY replay probe)", "https://github.com/XTLS/Xray-core/issues/6121", "forum"],
   xray2213: ["Xray discussion #2213 (Iran relay design)", "https://github.com/XTLS/Xray-core/discussions/2213", "forum"],
   xray4113: ["Xray discussion #4113 (XHTTP)", "https://github.com/XTLS/Xray-core/discussions/4113", "forum"],
+  moscow24: ["Moscow Times: Russia VPN bans (Jun 2024)", "https://www.themoscowtimes.com/2024/06/14/what-should-russians-do-if-vpns-are-banned-a84090", "news"],
   mediazona: ["Mediazona: Russia blocks VPN protocols (2023)", "https://en.zona.media/article/2023/08/08/vpn-trl", "news"],
   filterwatch: ["Filterwatch: Iran Jan 2026", "https://filter.watch/english/2026/01/28/network-monitoring-january-2026-from-regional-disuptions-to-total-blackout-and-whitelisted-access/", "news"],
   torblog25: ["Tor blog: Staying ahead of censors 2025", "https://blog.torproject.org/staying-ahead-of-censors-2025/", "news"],
@@ -117,7 +118,6 @@ const SRC = {
   husi: ["Husi", "https://github.com/xchacha20-poly1305/husi", "app"],
   throne: ["Throne", "https://github.com/throneproj/Throne", "app"],
   amnezia: ["AmneziaVPN", "https://github.com/amnezia-vpn/amnezia-client", "app"],
-  shadowrocket: ["Shadowrocket (App Store)", "https://apps.apple.com/app/shadowrocket/id932747118", "app"],
   sbapps: ["sing-box apps (SFI/SFM/SFA)", "https://sing-box.sagernet.org/clients/", "app"],
   clashverge: ["Clash Verge Rev", "https://github.com/clash-verge-rev/clash-verge-rev", "app"],
   wgapps: ["WireGuard apps", "https://www.wireguard.com/install/", "app"]
@@ -144,7 +144,7 @@ Object.assign(SRC, {
   "vardanian":["Vardanian 2025","https://ashvardanian.com/posts/chacha-vs-aes-2025/","data"],
   "wolfssl":["wolfSSL 2021","https://www.wolfssl.com/cryptographic-benchmarks-new-apple-m1/","vendor"],
   "vpntracker":["VPN Tracker blog","https://blog.vpntracker.com/ios-26-vpn-not-working-iphone-or-ipad/","vendor"],
-  "cisco":["Cisco L2TP MTU","https://www.cisco.com/c/de_de/support/docs/dial-access/virtual-private-dialup-network-vpdn/24320-l2tp-mtu-tuning.html","docs"],
+  "cisco":["Cisco L2TP MTU","https://www.cisco.com/c/en/us/support/docs/dial-access/virtual-private-dialup-network-vpdn/24320-l2tp-mtu-tuning.html","docs"],
   "wgpaper":["WireGuard whitepaper","https://www.wireguard.com/papers/wireguard.pdf","paper"],
   "hyconf":["Hysteria 2 client config","https://v2.hysteria.network/docs/advanced/Full-Client-Config/","docs"],
   "brutal":["apernet/tcp-brutal","https://github.com/apernet/tcp-brutal","code"],
@@ -201,12 +201,12 @@ const TECHS = [
     one: "The VPN built into iPhones, Macs and Windows. Fast and runs in the system kernel.",
     how: "IKEv2 sets up keys in two round trips, then IPsec (ESP) encrypts each packet inside the OS kernel. MOBIKE keeps it alive when you switch Wi-Fi to cellular.",
     hides: "Doesn't. ESP and UDP 500/4500 are easy to spot.",
-    over: "UDP 500/4500, ESP", cores: "Native on iOS, macOS, Windows; strongSwan on Linux", status: "Active. Lowest CPU in a 2020 benchmark. Blocked in Russia (2024).", src: ["rfc7296", "os3", "mediazona"] },
+    over: "UDP 500/4500, ESP", cores: "Native on iOS, macOS, Windows; strongSwan on Linux", status: "Active. Lowest CPU in a 2020 benchmark. Reportedly blocked in Russia (Jun 2024).", src: ["rfc7296", "os3", "moscow24"] },
   { id: "openvpn", name: "OpenVPN", year: "2001", y: 2001, fam: "vpn", cls: "popular",
     one: "The classic open-source VPN. Flexible, but heavy and easy to detect.",
     how: "A TLS control channel sets up keys; a separate data channel encrypts packets. Runs over UDP or TCP. Kernel offload (DCO) makes it much faster on Linux.",
     hides: "Poorly. Its handshake is a known signature.",
-    over: "UDP or TCP", cores: "Own apps; sing-box and mihomo as a hop", status: "Active. Blocked in Russia since 2023, Iran and Pakistan.", src: ["os3", "dco", "mediazona"] },
+    over: "UDP or TCP", cores: "Own apps; sing-box and mihomo as a hop", status: "Active. Blocked in Russia since 2023; UDP mostly blocked in Iran.", src: ["os3", "dco", "mediazona"] },
   { id: "sstp", name: "SSTP", year: "2007", y: 2007, fam: "vpn", cls: "legacy",
     one: "Microsoft's VPN over HTTPS. Windows-only and slow.",
     how: "Carries PPP inside an HTTPS (TLS) connection on port 443.", hides: "Somewhat: it uses port 443, but its pattern is known.",
@@ -215,13 +215,13 @@ const TECHS = [
     one: "The modern VPN: small, fast, and silent when idle. Not built to hide.",
     how: "One round-trip handshake, then each packet gets 60–80 bytes of header and is encrypted with ChaCha20-Poly1305. In the Linux kernel since 5.6; phones use the userspace wireguard-go.",
     hides: "Doesn't. The first byte is a plaintext message type and messages have fixed sizes, so it is easy to fingerprint.",
-    over: "UDP", cores: "Xray, sing-box, mihomo, v2fly; own apps; in 24 of 38 apps checked", status: "Active. Blocked in Iran (Jun 2026), Russia (2023), Egypt, Pakistan.", src: ["wgproto", "os3", "n4p628", "mediazona"] },
+    over: "UDP", cores: "Xray, sing-box, mihomo, v2fly; own apps; in 24 of 38 apps checked", status: "Active. Blocked in Iran (Jun 2026) and Russia (since 2023).", src: ["wgproto", "os3", "n4p628", "mediazona"] },
   { id: "amneziawg", name: "AmneziaWG", year: "2023 · v2 2025 · v3.1 2026", y: 2023, fam: "vpn", cls: "edge",
     one: "WireGuard with disguise: junk packets and random sizes so the handshake doesn't match.",
     how: "Same crypto as WireGuard. Adds junk packets before the handshake (Jc), random padding (S1–S4), changeable headers (H1–H4), and packets that mimic DNS, QUIC or SIP (I1–I5). 3.1 adds header protection.",
     hides: "By breaking WireGuard's fixed signature. Still random-looking UDP, which some networks throttle.",
-    over: "UDP", cores: "AmneziaVPN, Shadowrocket, INCY, Throne; not in upstream Xray/sing-box", status: "Active; built for Russia's 2026 blocks. Reported working in Iran (Jun 2026). Heavy use reportedly gets IPs banned: one Iranian blog advises staying under ~300 GB a month, and a 2025 study found MCI blocks proxy IPs in proportion to their connection count (refraction proxies, 2023–25 data).", src: ["awg", "n4p628", "n4p671", "ivpn", "asiaccs25"] },
-  { id: "mesh", name: "Tailscale / ZeroTier", year: "2013–2019", y: 2019, fam: "vpn", cls: "popular",
+    over: "UDP", cores: "AmneziaVPN, Shadowrocket, INCY, Throne; not in upstream Xray/sing-box", status: "Active; built for Russia's blocks (2023 on). Reported working in Iran (Jun 2026). Heavy use reportedly gets IPs banned: one Iranian blog advises staying under ~300 GB a month, and a 2025 study found MCI blocks proxy IPs in proportion to their connection count (refraction proxies, 2023–25 data).", src: ["awg", "n4p628", "n4p671", "ivpn", "asiaccs25"] },
+  { id: "mesh", name: "Tailscale / ZeroTier", year: "2013–2019", y: 2013, fam: "vpn", cls: "popular",
     one: "Mesh VPNs that link your own devices directly, punching through home routers.",
     how: "A coordination server tells devices how to reach each other; then they talk directly over WireGuard (Tailscale) or ZeroTier's own protocol. A relay is used when direct fails.",
     hides: "Doesn't. Not built for censorship.",
@@ -287,7 +287,7 @@ const TECHS = [
     how: "A 7-byte frame header inside TLS, padding on the first packets, and reuse of idle sessions so later connections skip the handshake.",
     hides: "As HTTPS, with padding against TLS-in-TLS detection.",
     over: "TCP + TLS", cores: "sing-box, mihomo; already 16 apps", status: "Pre-1.0. Reported working in Iran (Jun 2026). Performed poorly on iOS in a field test.", src: ["anytls", "n4p586", "notesCens"] },
-  { id: "shadowtls", name: "ShadowTLS v3", year: "2022", y: 2022, fam: "tls", cls: "popular",
+  { id: "shadowtls", name: "ShadowTLS v3", year: "2022 · v3 2023", y: 2022, fam: "tls", cls: "popular",
     one: "Does a real handshake with a trusted website, then switches to your proxy data.",
     how: "Relays the TLS handshake to a real server; afterwards each record carries a 4-byte HMAC so only your client's data is accepted. Usually wraps Shadowsocks.",
     hides: "Behind a real site's handshake.",
@@ -310,7 +310,7 @@ const TECHS = [
     one: "A QUIC proxy built for bad, lossy links. Looks like an HTTP/3 website.",
     how: "QUIC handshake, then an HTTP/3 login (success = status 233). Its Brutal congestion control keeps sending at a set rate when packets are lost, where TCP would slow down.",
     hides: "As HTTP/3, or as random UDP with Salamander. With Salamander on, probes can't reach the masquerade site at all, so it's Salamander (and a clean IP) doing the work. Dies where UDP or QUIC is blocked.",
-    over: "QUIC (UDP)", cores: "Xray, sing-box, mihomo; 29 of 38 apps", status: "Active. Working in Iran except Rightel (Jun 2026).", src: ["hy2proto", "foci25", "n4p586"] },
+    over: "QUIC (UDP)", cores: "Xray, sing-box, mihomo; 29 of 38 apps", status: "Active. With Salamander, working in Iran except Rightel (Jun 2026).", src: ["hy2proto", "foci25", "n4p586"] },
   { id: "tuic", name: "TUIC v5", year: "2022", y: 2022, fam: "quic", cls: "popular",
     one: "A lean QUIC proxy that can send data with zero round trips.",
     how: "Authenticates in parallel with the first commands, so data can flow at once (0-RTT). Full-cone UDP relay.",
@@ -451,7 +451,7 @@ const TECHS = [
   { id: "dnstt", name: "DNS tunnel (dnstt)", year: "2020", y: 2020, fam: "other", cls: "popular",
     one: "Hides data inside DNS lookups. Very slow, but works when almost nothing else does.",
     how: "Data is encoded in DNS queries to a domain you control; your server answers through the country's own DNS resolvers.", hides: "As DNS traffic.",
-    over: "DNS (UDP/DoH)", cores: "Standalone; MahsaNG, SlipNet", status: "The only tool reliably working during Iran's 2026 blackout.", src: ["n4p586", "slipstream"] },
+    over: "DNS (UDP/DoH)", cores: "Standalone; MahsaNG, SlipNet", status: "The only tool reliably working during Iran's Feb–May 2026 blackout.", src: ["n4p586", "slipstream"] },
   { id: "newdns", name: "Slipstream / XDNS", year: "2024–2026", y: 2024, fam: "other", cls: "edge",
     one: "Faster DNS tunnels from the 2026 blackouts.",
     how: "QUIC-over-DNS (Slipstream) and Xray's XDNS mask.", hides: "As DNS.",
@@ -481,7 +481,7 @@ const ROUTES = {
         seen: { dst: "y", you: "n", name: "y", data: "y" } }
     ],
     pros: ["Whole device, all traffic including UDP", "Built into operating systems", "Fast and efficient (kernel paths)"],
-    cons: ["Obvious fingerprint: blocked in Iran, Russia, China", "The VPN operator sees all your metadata"],
+    cons: ["Obvious fingerprint: blocked in Iran and Russia, easy to block anywhere", "The VPN operator sees all your metadata"],
     used: ["WireGuard, IKEv2, OpenVPN", "Commercial VPNs"], src: ["notesFlow"]
   },
   selfsteal: {
@@ -582,9 +582,9 @@ const ROUTES = {
 /* [value, what it means, source key] */
 const PERF_FACTS = [
   ["+32 to +84%", "battery current for five VPN protocols over no VPN on one Android phone on 5G (WireGuard lowest, SSTP highest), the only independent phone test (2022).", "fed4fire"],
-  ["~100×", "more idle wakeups in sing-box SFM than in Anywhere on the same chain (133 vs 1.6 per second). The app's design mattered more than the protocol.", "bench"],
+  ["~35×", "more idle wakeups in SFM than in Anywhere on the same chain (16 vs 0.46 per second, chain + rules setup). The app's design mattered more than the protocol.", "bench"],
   ["70 vs 1–2", "Mbit/s: REALITY self-steal vs a borrowed microsoft.com name, same path.", "notesCens"],
-  ["−45%", "throughput for QUIC vs TCP+TLS on fast links, because of receiver-side processing.", "zhang"],
+  ["up to −45%", "throughput for QUIC vs TCP+TLS on fast links, because of receiver-side processing.", "zhang"],
   ["~1 s", "for OpenVPN to connect, vs 6.9 ms for kernel WireGuard (LAN, 2020).", "os3"]
 ];
 
@@ -606,7 +606,7 @@ const PICKS = {
   censor: {
     items: [
       { rank: "1st · TCP", proto: "VLESS + REALITY + Vision, self-steal", why: "The best-reported option in Iran and Russia in 2026. Use your own domain with a real certificate as the handshake target, port 443, on a less popular hosting provider.", server: "Xray or sing-box; own domain + Let's Encrypt", src: ["n4p673", "n4p628", "notesCens"] },
-      { rank: "2nd · UDP backup", proto: "Hysteria2 + Salamander", why: "Fast to start and strong on lossy links; reported working in Iran except Rightel (Jun 2026). Useless where UDP is dropped.", server: "Hysteria or sing-box; port hopping helps", src: ["n4p586", "hy2hop", "notesPerf"] },
+      { rank: "2nd · UDP backup", proto: "Hysteria2 + Salamander", why: "Fast to start and strong on lossy links; with Salamander, reported working in Iran except Rightel (Jun 2026). Useless where UDP is dropped.", server: "Hysteria or sing-box; port hopping helps", src: ["n4p586", "hy2hop", "notesPerf"] },
       { rank: "3rd · fallbacks", proto: "XHTTP via CDN · AmneziaWG · Tor", why: "XHTTP or WebSocket through a CDN when your IP is blocked. AmneziaWG for a full-device VPN (built for Russia). With no server of your own: Psiphon, or Tor with Snowflake or WebTunnel.", src: ["xray4113", "awg", "torblog25"] }
     ],
     note: "Rotate server IPs if they get blocked. In Turkmenistan any foreign IP gets banned after moderate traffic, whatever the protocol."
@@ -614,10 +614,10 @@ const PICKS = {
   blackout: {
     items: [
       { rank: "1st", proto: "Relay inside the country", why: "During allowlists the protocol matters less than the IP. A relay in a domestic data-centre that keeps foreign access stays reachable when international links are cut.", server: "Domestic VPS → foreign exit (REALITY over TCP)", src: ["n4p630", "n4p579", "xray2213"] },
-      { rank: "2nd", proto: "CDN ranges on the allowlist", why: "Some CDN ranges were allowlisted at times in Iran (Jan 2026). VLESS over XHTTP or WebSocket can ride them.", src: ["n4p586", "xray4113"] },
+      { rank: "2nd", proto: "CDN ranges on the allowlist", why: "Some CDN ranges were allowlisted at times in Iran (Jan 2026). VLESS over XHTTP or WebSocket can ride them.", src: ["n4p586", "filterwatch", "xray4113"] },
       { rank: "Last resort", proto: "DNS tunnel · Psiphon", why: "DNS tunnels (dnstt, Slipstream) were the only tool reliably working in Iran's Feb–May 2026 blackout. Very slow. Psiphon (and its volunteer Conduit proxies) was the main method in late January.", src: ["n4p586", "slipstream", "psiphon"] }
     ],
-    note: "Shutdowns change week to week. The notes behind this page have no measurements from Iran for August–October 2026."
+    note: "Shutdowns change week to week. There are no third-party censorship reports from Iran for August–October 2026."
   }
 };
 
@@ -625,19 +625,19 @@ const PICKS = {
 const MATRIX = {
   countries: ["Iran", "China", "Russia", "Turkmenistan"],
   labels: { ok: "Works", deg: "Degraded", blk: "Blocked", unk: "No data" },
-  srcs: ["notesCens"],
+  srcs: ["notesCens", "n4p628", "n4p640", "n4p671", "n4p523", "n4p490", "n4p651", "n4p586", "n4p579", "xray6121", "mediazona", "moscow24", "filterwatch"],
   rows: [
-    ["WireGuard", [["blk", "Blackholed after handshake, Jun 2026 (n4p #628)"], ["blk", "Handshake fingerprintable"], ["blk", "Blocked since 2023 (Mediazona)"], ["blk", "n4p #523"]]],
-    ["AmneziaWG", [["ok", "Reported working, Jun 2026 (n4p #628)"], ["unk", ""], ["ok", "Works, but servers caught in mass IP bans, Aug–Sep 2026 (n4p #671)"], ["deg", "IPs banned by traffic volume, Aug 2026 (n4p #523)"]]],
+    ["WireGuard", [["blk", "Blackholed after handshake, Jun 2026 (n4p #628)"], ["blk", "Handshake fingerprintable; no 2026 source"], ["blk", "Blocked since 2023 (Mediazona)"], ["blk", "n4p #523"]]],
+    ["AmneziaWG", [["ok", "Reported working, Jun 2026 (n4p #628)"], ["unk", ""], ["ok", "Works, but servers caught in mass IP bans, Aug–Sep 2026 (n4p #671)"], ["blk", "IPs banned after moderate traffic, Aug 2026 (n4p #523)"]]],
     ["OpenVPN", [["blk", "UDP mostly blocked"], ["blk", "Well known; no 2026 source"], ["blk", "Blocked since 2023"], ["blk", "Unconfirmed"]]],
-    ["IKEv2/IPsec", [["deg", "Field reports: usable only as a server-to-server overlay (Oct 2026)"], ["blk", "Unconfirmed; no 2026 source"], ["blk", "Reportedly blocked, Jun 2024"], ["unk", ""]]],
+    ["IKEv2/IPsec", [["deg", "Own field test: usable only as a server-to-server overlay (Oct 2026)"], ["blk", "Unconfirmed; no 2026 source"], ["blk", "Reportedly blocked, Jun 2024 (Moscow Times)"], ["unk", ""]]],
     ["Shadowsocks / SS2022", [["ok", "'Works great', late Jul 2026 (n4p #640)"], ["deg", "Classic SS mostly blocked, SS2022 degraded: fully-encrypted detection since 2021 (USENIX 2023)"], ["deg", "Reportedly blockable (2024); keep first packets small (n4p #673)"], ["unk", ""]]],
     ["VMess", [["unk", "Largely replaced by VLESS"], ["blk", "Fully-encrypted detection (USENIX 2023)"], ["unk", ""], ["unk", ""]]],
-    ["VLESS + REALITY", [["ok", "Working again from mid-Jun 2026; needs IP rotation. Borrowed names throttled, self-steal fine (field test)"], ["ok", "Replay-probe risk on some targets (Xray #6121)"], ["ok", "Self-steal works on all ISPs, Sep–Oct 2026; popular VPS ranges mass-banned"], ["blk", "Banned after traffic"]]],
+    ["VLESS + REALITY", [["ok", "Working again from mid-Jun 2026; needs IP rotation. Borrowed names throttled, self-steal fine (field test)"], ["ok", "Replay-probe risk on some targets (Xray #6121)"], ["ok", "Self-steal works on all ISPs, Sep–Oct 2026; popular VPS ranges mass-banned"], ["blk", "IPs banned after moderate traffic (n4p #523)"]]],
     ["VLESS via CDN", [["deg", "Works at times (up to 150 Mbps); domains blocked within ~24 h"], ["ok", "CDN collateral damage; no 2026 measurement"], ["ok", "One of the few options under allowlists (n4p #579)"], ["blk", "CDN IPs and domains banned"]]],
-    ["Trojan", [["deg", "Domain and IP blocked after use, Jun 2026"], ["deg", "TLS-in-TLS detectable"], ["deg", "16–20 KB freeze to foreign hosting"], ["blk", ""]]],
-    ["Hysteria2", [["ok", "All ISPs except Rightel, 13 Jun 2026; fails in blackouts and where UDP is dropped"], ["deg", "Residential UDP QoS cuts long sessions"], ["deg", "UDP blocked on mobile"], ["blk", "Banned with and without Salamander and port hopping"]]],
-    ["TUIC / plain QUIC", [["blk", "QUIC blocked 100% since Jun 2025 (FOCI 2026)"], ["deg", "QUIC blocked by name since Apr 2024"], ["deg", "QUIC v1 name filter since 2023"], ["blk", ""]]],
+    ["Trojan", [["deg", "Domain and IP blocked after use, Jun 2026"], ["deg", "TLS-in-TLS detectable"], ["deg", "16–20 KB freeze to foreign hosting (n4p #490)"], ["blk", "Likely; no 2026 source"]]],
+    ["Hysteria2", [["ok", "With Salamander: all ISPs except Rightel, 13 Jun 2026; fails in blackouts and where UDP is dropped"], ["deg", "Residential UDP QoS cuts long sessions"], ["deg", "UDP blocked on mobile"], ["blk", "Banned with and without Salamander and port hopping"]]],
+    ["TUIC / plain QUIC", [["blk", "QUIC blocked 100% since Jun 2025 (FOCI 2026)"], ["deg", "QUIC blocked by name since Apr 2024"], ["deg", "QUIC v1 name filter since 2023"], ["blk", "Likely; no 2026 source"]]],
     ["AnyTLS", [["ok", "All ISPs except Rightel, Jun 2026"], ["unk", ""], ["unk", ""], ["unk", ""]]],
     ["NaiveProxy", [["unk", ""], ["ok", "Chrome network stack; no 2026 measurement"], ["unk", ""], ["unk", ""]]],
     ["ClientHello fragmentation", [["blk", "Stopped working ~27 Jul 2026: filter reassembles (n4p #586, #640)"], ["unk", ""], ["unk", ""], ["unk", ""]]],
@@ -652,14 +652,14 @@ const MATRIX = {
 };
 
 const CAVEATS = [
-  "No phone battery measurement exists for any proxy protocol. The battery chart covers VPN protocols on one Android phone in 2022.",
-  "There is no independent Xray vs sing-box vs mihomo benchmark. The loopback chart is run by the author of a competing core.",
+  "No phone battery measurement exists for any proxy protocol. The only phone battery figures cover five VPN protocols on one Android phone in 2022.",
+  "There is no independent Xray vs sing-box vs mihomo benchmark. The Shadowsocks 2022 loopback speed claim comes from tachyon-core's own author-run benchmark.",
   "The field-test figures are single runs on one path (relay to a US exit, October 2026), not a controlled study.",
-  "Censorship reports are mostly user posts on net4people, often one ISP and a few people. Iran has no measurements for August–October 2026.",
+  "Censorship reports are mostly user posts on net4people, often one ISP and a few people. Iran has no third-party reports for August–October 2026.",
   "Brook, the Cloudflare quick tunnel, the HTTP header disguise and WARP exits come mainly from an Iranian how-to blog (ivpn.pro, 2024–2026) that also sells servers. Its claims are untested; the notes mark which ones independent sources support.",
   "Egypt, UAE, Myanmar and Pakistan have almost no protocol-level data, so they're left out of the table.",
   "App counts come from two app lists that lean toward Xray (one is Xray's own README).",
-  "The popular / cutting edge / legacy rules are this site's own; VMess, AnyTLS, XHTTP, AmneziaWG and Brook are borderline calls."
+  "The popular / cutting edge / legacy rules are this site's own; VMess, AnyTLS, XHTTP, AmneziaWG, Brook, HTTPUpgrade, MASQUE and Cloak are borderline calls."
 ];
 
 
@@ -715,7 +715,7 @@ const APPS = [
     src: ["loonstore"] },
   { name: "Surge · Quantumult X", by: "Closed source", open: false, v: "unverified",
     kv: [["Core", "Not published"], ["IP stack", "Not published"]],
-    note: "Neither documents its TCP/IP stack or memory footprint. The \"8–15 MB\" often quoted matches the old iOS 14 extension limit, not a measurement.",
+    note: "Neither documents its TCP/IP stack or memory footprint. The \"8–15 MB\" often quoted matches the limit through iOS 14, not a measurement.",
     src: ["surge", "stashwiki"] },
   { name: "Stash", by: "Stash Networks Limited", open: false, v: "unverified",
     kv: [["Core", "\"Written from scratch\"; language not disclosed"], ["IP stack", "Not published"]],
@@ -729,9 +729,9 @@ const CLAIMS = [
   ["iOS", "NAT keepalives are offloaded to the baseband so the CPU sleeps and battery is saved", "partly", "Apple offloads keepalives \"to hardware\" during sleep, only for supervised Always-On IKEv2, and calls it a battery cost. \"Baseband\" appears in no Apple source. Defaults are 20 s on Wi-Fi and 110 s on cellular.", ["mdm", "deploy"]],
   ["iOS", "iOS IKEv2 supports MOBIKE", "holds", "On by default; disableMOBIKE since iOS 9. Apple publishes no savings figure.", ["mdm"]],
   ["iOS", "Third-party VPNs copy every packet between kernel and user space", "holds", "Packets are passed as NSData arrays through NEPacketTunnelFlow. They come in batches, so \"one context switch per packet\" overstates it. Apple has published no benchmark.", ["flow"]],
-  ["iOS", "Packet tunnel extensions have a 50 MB memory limit (was 15 MB), enforced by jetsam", "partly", "Apple DTS measured 50 MiB on iOS 15/16 and reports it unchanged on iOS 26, but it isn't officially documented. The 15 MB figure was a 2017 developer observation. Jetsam enforcement is shown only by logs.", ["forum", "sb3976"]],
+  ["iOS", "Packet tunnel extensions have a 50 MB memory limit (was 15 MB), enforced by jetsam", "partly", "Apple DTS measured 50 MiB on iOS 15/16 and reports it unchanged on iOS 26, but it isn't officially documented. The 15 MB figure, the limit through iOS 14, comes from a 2017 developer observation. Jetsam enforcement is shown only by logs.", ["forum", "sb3976"]],
   ["iOS", "Apple Silicon has a dedicated AES engine that IKEv2 uses", "wrong", "Kernel ESP uses corecrypto on the CPU's ARMv8 AES instructions. The AES Engine sits between flash storage and memory and is for file encryption only.", ["corecrypto", "platsec"]],
-  ["iOS", "ChaCha20 runs on NEON; AES-GCM is faster on Apple chips", "holds", "On an M2 Pro, AES-GCM was 1.3–2.4× faster per core. That is throughput only, and nobody has measured energy. Results depend on how the library was built.", ["vardanian", "wolfssl"]],
+  ["iOS", "ChaCha20 runs on NEON; AES-GCM is faster on Apple chips", "holds", "On an M2 Pro, AES-GCM encrypted about 2–3× faster per core. That is throughput only, and nobody has measured energy. Results depend on how the library was built.", ["vardanian", "wolfssl"]],
   ["iOS", "iOS IKEv2 supports AES-GCM", "holds", "AES-256-GCM since iOS 8.3, ChaCha20-Poly1305 since iOS 13. The default is AES-256-CBC. AES-128-GCM has been deprecated since iOS 17.", ["ikev2api"]],
   ["iOS", "L2TP still supported; PPTP removed; iOS 26 broke legacy L2TP", "holds", "L2TP is still a valid VPNType and PPTP is not. The iOS 26 algorithm removals are reported by a vendor blog and backed by SDK obsoletion markers.", ["mdm", "vpntracker"]],
   ["Protocol", "L2TP/IPsec double encapsulation adds overhead", "holds", "L2TP/UDP/IP adds 40 bytes, and only IPsec encrypts. It drew the highest battery current of the kernel-based protocols in the 5G poster.", ["cisco", "fed4fire"]],
@@ -754,7 +754,7 @@ const CLAIMS = [
   ["App", "Anywhere uses Swift TLS with a JA4 Safari fingerprint", "partly", "A Safari 26.3 fingerprint is available, but Chrome 133 is the default. \"JA4\" appears nowhere in the code.", ["anyreality"]],
   ["App", "Shadowrocket is by \"Pan Guoting\", in C/C++ on lwIP", "unverified", "The seller is Shadow Launch Technology Ltd. Its internals are unpublished.", ["srstore"]],
   ["App", "Egern uses Swift + Rust, smoltcp and JavaScriptCore", "unverified", "The only statement is a \"new user-space stack\" compared against \"optimized lwIP\". Scripts run in a WebView.", ["egstore"]],
-  ["App", "Surge, Loon and Quantumult X use C lwIP stacks at 8–15 MB", "unverified", "None publishes its stack or footprint. 15 MB is the old iOS 14 extension limit.", ["surge", "stashwiki"]],
+  ["App", "Surge, Loon and Quantumult X use C lwIP stacks at 8–15 MB", "unverified", "None publishes its stack or footprint. 15 MB was the limit through iOS 14.", ["surge", "stashwiki"]],
   ["App", "Stash is Go-based", "unverified", "The vendor says it was \"written from scratch\" and doesn't bundle Clash. The language isn't disclosed.", ["stash"]],
   ["App", "sing-box: gomobile libbox, system/gvisor/mixed stacks, tun fd via KVC", "holds", "The default is mixed on 1.14 Apple builds, and 1.15 deprecates the stack option.", ["sbapple", "sbtun"]],
   ["App", "wireguard-apple: wireguard-go, finds the utun fd with CTLIOCGINFO", "holds", "The code matches the quoted lines.", ["wgapple"]],
@@ -796,8 +796,8 @@ const NUMBERS = [
 const POWER_TIERS = [
   null,
   { label: "Low", desc: "Kernel data path, or sends nothing when idle." },
-  { label: "Moderate", desc: "A userspace app with its own TCP/IP stack moves every packet." },
-  { label: "High", desc: "Userspace QUIC or UDP: one system call per packet and more CPU per byte (4–12× REALITY in a field test)." },
+  { label: "Moderate", desc: "A userspace app with its own TCP/IP stack moves every packet, or a kernel VPN that measured mid-range in the 2022 phone test." },
+  { label: "High", desc: "Userspace QUIC or UDP: one system call per packet and more CPU per byte (4–12× REALITY in a field test). Also heavy framing or several relays (Tor)." },
   { label: "Highest", desc: "Measured high in the 2022 phone test, or keeps the radio busy (relays, constant small packets)." }
 ];
 const CONN = {
@@ -812,8 +812,8 @@ const CONN = {
 const COUNTRIES = [["IR", "Iran"], ["CN", "China"], ["RU", "Russia"], ["TM", "Turkmenistan"]];
 const TL = {
   pptp: { c: "tcp", p: 1, d: ["blk~", "blk~", "blk~", "blk~"], dn: "GRE and port 1723 are trivial to spot; no 2026 report needed." },
-  l2tp: { c: "udp", p: 4, m: 51, d: ["blk~", "blk~", "blk", "unk"], dn: "Blocked in Russia since 2023 (Mediazona). Fixed UDP ports elsewhere." },
-  ikev2: { c: "udp", p: 1, m: 45, d: "IKEv2/IPsec" },
+  l2tp: { c: "udp", p: 2, m: 51, d: ["blk~", "blk~", "blk", "unk"], dn: "Blocked in Russia since 2023 (Mediazona). Fixed UDP ports elsewhere." },
+  ikev2: { c: "udp", p: 2, m: 45, d: "IKEv2/IPsec" },
   openvpn: { c: "both", p: 4, m: 66, d: "OpenVPN" },
   sstp: { c: "tcp", p: 4, m: 84, d: ["unk", "unk", "unk", "unk"] },
   wireguard: { c: "udp", p: 1, m: 32, d: "WireGuard" },

@@ -6,7 +6,7 @@ A field guide to VPN and proxy techniques, from 1995 to 2026, with a focus on wh
 
 ## What's inside
 
-- **[Client-app benchmark](https://0xahp.github.io/tunnel-atlas/#bench)**: eight proxy client apps for macOS (Anywhere, SFM, Egern, Shadowrocket, Karing, Rabbit Hole, V2Box, Happ) measured on one Mac on battery, October 2026. Three setups kept separate (chain + rules, basic, top speed), each in one table: leaderboard (35% traffic efficiency, 35% idle efficiency, 30% performance) plus idle wakeups and power, power, CPU and energy per GB under load, top speed and page load time.
+- **[Client-app benchmark](https://0xahp.github.io/tunnel-atlas/#bench)**: eight proxy client apps for macOS (Anywhere, SFM, Egern, Shadowrocket, Karing, Rabbit Hole, V2Box, Happ) measured on one Mac on battery, October 2026. Three setups kept separate (chain + rules, basic, top speed), each in one table: idle wakeups and power, power, CPU and energy per GB under load, top speed and time to first byte, plus a leaderboard for the two real-network setups (35% traffic efficiency, 35% idle efficiency, 30% performance).
 - **[Routes](https://0xahp.github.io/tunnel-atlas/#setup)**: the top setups for 2026 for three situations (no censorship, a censored country, a shutdown or allowlist), with a diagram of who sees what along the path.
 - **[Timeline](https://0xahp.github.io/tunnel-atlas/#timeline)**: 58 techniques, newest to oldest. Each one shows its 2026 status in Iran, China, Russia and Turkmenistan, how it connects (TCP, UDP, QUIC, DNS…), and an estimate of its battery cost on a phone.
 - **[Sources](https://0xahp.github.io/tunnel-atlas/sources.html)**: every reference behind the figures, plus censorship status by country and the claims that were checked.

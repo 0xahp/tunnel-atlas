@@ -355,8 +355,9 @@ const Bench = {
         ${Object.entries(cc).map(([a, v]) => `<tr><td><b>${esc(name(a))}</b>${v.same_version ? "" : ` <span class="note">updated in between (2.3 → 2.4)</span>`}</td>
           <td class="num">${fmtNum(v.one_hop)}</td><td class="num">${fmtNum(v.chain)}</td><td class="num">${v.factor.toFixed(1)}×</td></tr>`).join("")}
         </tbody></table></div>
-        <p>Anywhere 2.4 runs about a quarter of its tunnel work on the Mac's performance cores (2.3 used none), and each CPU-second there
-          costs about 3× the energy. On the chain, 2.3 measured 2.2 J/GB in a one-round check, so most of its jump comes from the update.</p></div>` : "";
+        <p>Anywhere 2.4 runs about 20–27% of its tunnel work on the Mac's performance cores (2.3 used none). It needs less CPU time per GB
+          (24 s vs 39 s on the chain), but each CPU-second costs about 3× the energy. On the chain, 2.3 measured 2.2 J/GB in a one-round check,
+          so most of its jump comes from the update.</p></div>` : "";
 
     const appCards = apps.map((c) => {
       const a = APPS.find((y) => y.name === BENCH_APP_NOTES[c]);
@@ -375,13 +376,13 @@ const Bench = {
         <p>Each number is the app's median over all rounds; hover it for the range. ↓ lower is better, ↑ higher is better.
           <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
           ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
-          Power, energy and CPU are for the app's tunnel process only.${x.note ? ` ${esc(x.note)}` : ""}</p></div>
+          App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p></div>
       ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
         <div class="apps">${appCards}</div></div>` : ""}
       <p class="note">One Mac, one network, one week of October 2026; results can change with app updates. Every app window was closed during the tests,
-        since an open window costs more than the tunnel. The Mac numbers stand in for iPhone ones: same apps and code, but no phone battery was measured.</p>`;
+        since an open window costs more than the tunnel. The Mac numbers stand in for iPhone ones: similar code (same cores), but no phone battery was measured.</p>`;
   }
 };
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
