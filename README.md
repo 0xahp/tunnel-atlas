@@ -6,6 +6,8 @@
 
 ## Proxy client benchmark
 
+**What started it:** [a September 2026 post](https://x.com/grgerwcwetwet/status/2099466023472877777) showing sing-box 1.15's new TCP/IP stack reaching 12.6 Gbit/s upload and 14.9 Gbit/s download in an iPhone loopback test, ahead of Loon, Quantumult X, Surge, Stash and Shadowrocket. Peak speed is one thing; I wanted to know what these apps cost in battery and CPU on everyday traffic. (The speed part held up here too: SFM, sing-box's Mac app, was the fastest in the lab test at 10.2 Gbit/s upload.)
+
 Eight proxy client apps for macOS (Anywhere, SFM, Egern, Shadowrocket, Karing, Rabbit Hole, V2Box, Happ) sent the same traffic through the same servers, one app at a time and in a rotating order, on a MacBook Air M1 running on battery with every app window closed.
 
 <picture>
