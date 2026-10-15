@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tunnel Atlas</title>
-<meta name="description" content="Every VPN and proxy technique from 1995 to 2026, with its 2026 censorship status, connection type and power estimate; and the best 2026 setups with their traffic flow.">
+<meta name="description" content="Every VPN and proxy technique from 1995 to 2026, with its 2026 censorship status, connection type and power estimate; the best 2026 setups with their traffic flow; and a field test of eight VLESS client apps on a Mac.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Martian+Mono:wdth,wght@87.5,300;87.5,500;100,700&display=swap">
@@ -65,6 +65,16 @@
         <div class="flow" id="pk-flow"></div>
       </div>
       <p class="note" id="pk-note"></p>
+
+      <div class="bench" id="bench">
+        <div class="sec-head">
+          <h2 class="sec-h2">Which VLESS client app costs the least?</h2>
+          <p class="lede">Up to eight Mac apps sent the same traffic through the same servers, one app at a time, on battery.
+            Three setups, measured separately: pick one to see its leaderboard and every measure behind it.</p>
+        </div>
+        <div class="seg" id="bn-exp" role="radiogroup" aria-label="Benchmark setup"></div>
+        <div id="bn-body"><p class="note">Loading benchmark results…</p></div>
+      </div>
     </section>
     <p class="site-foot">Every figure links to its source on the <a href="sources.html">sources page</a>.</p>
   </main>

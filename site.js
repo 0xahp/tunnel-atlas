@@ -284,145 +284,138 @@ const Picks = {
 };
 
 /* ==================== Client-app benchmark ====================
-   Reads proxy-bench live when the page is served next to it (local use); otherwise the copy in bench/
-   made by sync-bench.sh (the published site). */
-const BENCH_SOURCES = [
-  { live: true, local: true, sum: "../proxy-bench/results/summary.json", apps: "../proxy-bench/configs/apps.tsv", meta: (s) => `../proxy-bench/results/raw/${s}/meta.txt` },
-  { live: false, sum: "bench/summary.json", apps: "bench/apps.tsv", meta: () => "bench/meta.txt" }
-];
+   Reads bench/experiments.json, copied from proxy-bench by sync-bench.sh. Three setups, never pooled. */
+const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole" };
 const BENCH_APP_NOTES = { anywhere: "Anywhere", sfm: "sing-box for Apple", karing: "Karing", shadowrocket: "Shadowrocket", egern: "Egern" };
+const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
+const BENCH_TABS = { A: "Daily setup: chain + rules", B: "Simple setup: one hop", C: "Lab: top speed" };
+// [title, unit, case, metric, scale, higher is better]
+const IDLE = (c) => ["Idle", [
+  ["Idle wakeups", "times per second the app wakes the CPU", c, "tunnel_wakeups_per_s", 1],
+  ["Idle power", "app only · µW", c, "tunnel_power_w", 1e6]]];
+const AT100 = ["At 100 Mbit/s download", [
+  ["Power at 100 Mbit/s", "app only · mW", "dl_100m", "tunnel_power_w", 1e3],
+  ["Energy per GB at 100 Mbit/s", "app only · joules", "dl_100m", "tunnel_energy_per_gb", 1],
+  ["CPU at 100 Mbit/s", "app only · % of one core", "dl_100m", "tunnel_cpu_pct", 1],
+  ["Whole-Mac energy per GB", "battery sensor · joules", "dl_100m", "pstr_energy_per_gb", 1]]];
+const BENCH_CARDS = {
+  A: [IDLE("idle"), AT100,
+    ["Full speed", [
+      ["Top download speed", "Mbit/s · the path tops out near 182", "dl_max", "mbps", 1, true],
+      ["Energy per GB at full speed", "app only · joules", "dl_max", "tunnel_energy_per_gb", 1]]],
+    ["Web pages", [
+      ["Foreign pages: first byte", "50 pages · ms", "req50", "first_byte_ms", 1],
+      ["Local pages (direct): first byte", "20 pages · ms", "reqir", "first_byte_ms", 1]]]],
+  B: [IDLE("idle"), AT100,
+    ["Web pages", [["Foreign pages: first byte", "50 pages · ms", "req50", "first_byte_ms", 1]]]],
+  C: [["Top speed", [["Top upload speed", "1 stream · Gbit/s", "tcp_up_1", "gbps", 1, true]]],
+    ["At 500 Mbit/s upload", [
+      ["Power at 500 Mbit/s", "app only · mW", "tcp_up_500m", "tunnel_power_w", 1e3],
+      ["Energy per GB at 500 Mbit/s", "app only · joules", "tcp_up_500m", "tunnel_energy_per_gb", 1],
+      ["CPU at 500 Mbit/s", "app only · % of one core", "tcp_up_500m", "tunnel_cpu_pct", 1]]],
+    IDLE("idle30")]
+};
 const Bench = {
+  exp: "A",
   async init() {
-    const get = (u, as) => fetch(u, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(r.status); return r[as](); });
-    const onLocalhost = ["127.0.0.1", "localhost"].includes(location.hostname);
-    for (const src of BENCH_SOURCES) {
-      if (src.local && !onLocalhost) continue;
-      let data;
-      try {
-        const [sum, tsv] = await Promise.all([get(src.sum, "json"), get(src.apps, "text")]);
-        const names = {};
-        tsv.trim().split("\n").slice(1).forEach((l) => { const [k, name] = l.split("\t"); names[k] = name; });
-        const lastB = sum.sessions.filter((s) => s.endsWith("-B")).pop();
-        const meta = lastB ? await get(src.meta(lastB), "text").catch(() => "") : "";
-        data = [sum, names, meta, src.live];
-      } catch (e) { continue; /* try the next source */ }
-      this.render(...data);
-      if (this.jump) { this.jump = false; $("#bench").scrollIntoView(); }
+    try {
+      const r = await fetch("bench/experiments.json", { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      this.data = await r.json();
+    } catch (e) {
+      $("#bn-body").innerHTML = `<div class="empty"><h3>Benchmark results unavailable</h3>
+        <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
       return;
     }
-    $("#bn-body").innerHTML = `<div class="empty"><h3>Benchmark results unavailable</h3>
-      <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
+    $("#bn-exp").innerHTML = Object.entries(BENCH_TABS).map(([id, t]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}</button>`).join("");
+    $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.render(); } });
+    this.render();
+    if (this.jump) { this.jump = false; $("#bench").scrollIntoView(); }
   },
-  render(sum, names, meta, live) {
-    const apps = Object.keys(names);
-    const entry = (mo, ca, me) => sum.summary.find((e) => e.mode === mo && e.case === ca && e.metric === me);
-    const versions = {}; let model = "";
-    for (const line of meta.split("\n")) {
-      const m = line.match(/^app (\w+)=(.+)$/); if (m) versions[m[1]] = m[2];
-      const c = line.match(/^model=(\S+) cpu=(.+)$/); if (c) model = `${c[2]} (${c[1]})`;
-    }
-    const mtu = {};
-    sum.summary.filter((e) => e.metric === "mtu").forEach((e) => { for (const [c, v] of Object.entries(e.stats)) mtu[c] = Math.round(v.median); });
-    for (const c in names) if (mtu[c] && mtu[c] !== 1500) versions[c] = (versions[c] || "") + ` · MTU ${mtu[c]}`;
-    const DL = entry("B", "dl_100m", "tunnel_cpu_per_gb") ? "dl_100m" : "dl_max";
-    const RANKED = [ // same measures and tie rule as proxy-bench/scripts/make_page.py
-      ["Idle: wakeups per second", "B", "idle", "tunnel_wakeups_per_s", "lower"],
-      ["Idle: CPU", "B", "idle", "tunnel_cpu_pct", "lower"],
-      ["Idle: whole-Mac power above no VPN", "B", "idle", "pstr_extra_w", "lower"],
-      ["Idle: memory", "B", "idle", "tunnel_footprint_mb", "lower"],
-      ["Download: CPU per GB", "B", DL, "tunnel_cpu_per_gb", "lower"],
-      ["Download: app energy per GB", "B", DL, "tunnel_energy_per_gb", "lower"],
-      ["Download: whole-Mac energy per GB", "B", DL, "pstr_energy_per_gb", "lower"],
-      ["Web request: time to first byte", "B", "req50", "first_byte_ms", "lower"],
-      ["Lab: top speed, upload", "L", "tcp_up_1", "gbps", "higher"],
-      ["Lab: top speed, download", "L", "tcp_down_1", "gbps", "higher"],
-      ["Lab: CPU per GB at 500 Mbit/s", "L", "tcp_up_500m", "tunnel_cpu_per_gb", "lower"]
-    ];
-    const tieRanks = (e, better) => {
-      const st = Object.fromEntries(Object.entries(e.stats).filter(([c]) => names[c]));
-      const beats = better === "lower" ? (d, c) => st[d].max < st[c].min : (d, c) => st[d].min > st[c].max;
-      const r = {};
-      for (const c in st) r[c] = 1 + Object.keys(st).filter((d) => d !== c && beats(d, c)).length;
-      for (const c in e.excluded || {}) if (names[c]) r[c] = Object.keys(st).length + Object.keys(e.excluded).length;
-      return r;
-    };
-    const median = (a) => { const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-    const ranks = {}, used = [];
-    for (const [t, mo, ca, me, b] of RANKED) {
-      const e = entry(mo, ca, me);
-      const ns = e ? Object.entries(e.stats).filter(([c]) => names[c]).map(([, v]) => v.n) : [];
-      if (!ns.length || median(ns) < 3) continue;
-      used.push([t, e, b]);
-      for (const [c, r] of Object.entries(tieRanks(e, b))) (ranks[c] = ranks[c] || {})[t] = r;
-    }
-    const avg = Object.fromEntries(Object.entries(ranks).map(([c, v]) => [c, Object.values(v).reduce((a, x) => a + x, 0) / Object.values(v).length]));
-    const board = Object.keys(avg).sort((a, b) => avg[a] - avg[b]);
-    const fails = (c) => Object.values(sum.failures || {}).reduce((a, by) => a + ((by[c] || {}).failed || []).length, 0);
-    const runs = (c) => Object.values(sum.failures || {}).reduce((a, by) => a + ((by[c] || {}).runs || 0), 0);
-    const nApps = board.length;
-    const rk = (r) => r === undefined ? "–" : `<span class="rk ${r === 1 ? "r1" : r >= nApps ? "rlast" : "rmid"}">${r}</span>`;
-    const fmtDate = (s) => { const m = s.match(/^(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d)/); return m ? `${+m[3]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[2] - 1]} ${m[4]}:${m[5]}` : s; };
-    const head = used.map(([t], i) => `<th class="num" title="${esc(t)}">${i + 1}</th>`).join("");
-    const rows = board.map((c, p) => `<tr${p === 0 ? ' class="lead"' : ""}><td class="num">${p + 1}</td><td><b>${esc(names[c])}</b> <span class="note">${esc(versions[c] || "")}</span></td>
-      <td class="num"><b>${avg[c].toFixed(1)}</b></td><td class="num">${fails(c)} of ${runs(c)}</td>${used.map(([t]) => `<td class="num">${rk(ranks[c][t])}</td>`).join("")}</tr>`).join("");
-    const key = used.map(([t], i) => `<li>${i + 1}. ${esc(t)}</li>`).join("");
+  render() {
+    $("#bn-exp").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.exp));
+    const x = this.data.experiments.find((e) => e.id === this.exp);
+    const apps = Object.keys(x.versions);
+    const name = (a) => BENCH_NAMES[a] || a;
+    const ver = (a) => x.versions[a].replace(/\s*\(.*\)$/, "");
+    const stats = (ca, me) => (x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats;
+    const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
 
-    // range plots: min–max line and median dot per app; green = shares rank 1
-    const rate = DL === "dl_100m" ? "At 100 Mbit/s" : "At full speed";
-    const PLOTS = [
-      ["Idle power above no VPN", "Whole Mac, screen off, 2 min · mW", "B", "idle", "pstr_extra_w", 1000],
-      ["Idle wakeups", "Tunnel process · per second", "B", "idle", "tunnel_wakeups_per_s", 1],
-      ["CPU per GB downloaded", `${rate} · CPU-seconds per GB`, "B", DL, "tunnel_cpu_per_gb", 1],
-      ["Whole-Mac energy per GB", `${rate} · joules per GB`, "B", DL, "pstr_energy_per_gb", 1],
-      ["Time to first byte", "50 web requests · ms", "B", "req50", "first_byte_ms", 1],
-      ["Peak memory", "Tunnel process · MiB; red line = iOS packet-tunnel limit (50 MiB)", "B", "block", "tunnel_peak_footprint_mb", 1, 50]
-    ];
-    const plot = ([title, unit, mo, ca, me, sc, lim]) => {
-      const e = entry(mo, ca, me);
-      if (!e) return "";
-      const r1 = tieRanks(e, "lower");
-      const st = Object.entries(e.stats).filter(([c]) => names[c]).sort((a, b) => a[1].median - b[1].median);
-      const lo = Math.min(0, ...st.map(([, v]) => v.min * sc)), hi = Math.max(lim || 0, ...st.map(([, v]) => v.max * sc)) * 1.06;
-      const L = 104, R = 396, rowH = 22, top = 8, H = top + st.length * rowH + 22;
-      const x = (v) => L + (v - lo) / (hi - lo || 1) * (R - L);
-      const step = niceStep((hi - lo) / 4);
+    // range plot: line = best to worst round, dot = median; green = shares first place
+    const plot = ([title, unit, ca, me, sc, hi]) => {
+      const s = stats(ca, me);
+      if (!s) return "";
+      const st = Object.entries(s).filter(([a]) => x.versions[a]).sort((p, q) => hi ? q[1].median - p[1].median : p[1].median - q[1].median);
+      const beats = hi ? (d, c) => s[d].min > s[c].max : (d, c) => s[d].max < s[c].min;
+      const first = (c) => !st.some(([d]) => d !== c && beats(d, c));
+      const missing = apps.filter((a) => !s[a]).map(name);
+      const lo = 0, top = 8, rowH = 22, L = 104, R = 396, H = top + st.length * rowH + 22;
+      const hiV = Math.max(...st.map(([, v]) => v.max * sc)) * 1.06 || 1;
+      const X = (v) => L + (v - lo) / (hiV - lo) * (R - L);
+      const step = niceStep(hiV / 4);
       let ticks = "";
-      for (let v = Math.ceil(lo / step) * step; v <= hi; v += step)
-        ticks += `<line class="ax" x1="${x(v)}" x2="${x(v)}" y1="${top - 4}" y2="${H - 18}"/><text class="tick" x="${x(v)}" y="${H - 5}" text-anchor="middle">${fmtNum(v)}</text>`;
-      const bars = st.map(([c, v], k) => {
-        const yy = top + k * rowH + rowH / 2;
-        return `<g class="${r1[c] === 1 ? "best" : ""}"><text class="lbl" x="${L - 8}" y="${yy + 4}" text-anchor="end">${esc(names[c])}</text>
-          <line class="span" x1="${x(v.min * sc)}" x2="${Math.max(x(v.max * sc), x(v.min * sc) + 0.5)}" y1="${yy}" y2="${yy}"/>
-          <circle class="med" cx="${x(v.median * sc)}" cy="${yy}" r="4"><title>${esc(names[c])}: median ${fmtNum(v.median * sc)}, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)}, ${v.n} runs</title></circle></g>`;
+      for (let v = 0; v <= hiV; v += step)
+        ticks += `<line class="ax" x1="${X(v)}" x2="${X(v)}" y1="${top - 4}" y2="${H - 18}"/><text class="tick" x="${X(v)}" y="${H - 5}" text-anchor="middle">${fmtNum(v)}</text>`;
+      const rows = st.map(([a, v], k) => {
+        const y = top + k * rowH + rowH / 2;
+        return `<g class="${first(a) ? "best" : ""}"><text class="lbl" x="${L - 8}" y="${y + 4}" text-anchor="end">${esc(name(a))}</text>
+          <line class="span" x1="${X(v.min * sc)}" x2="${Math.max(X(v.max * sc), X(v.min * sc) + 0.5)}" y1="${y}" y2="${y}"/>
+          <circle class="med" cx="${X(v.median * sc)}" cy="${y}" r="4"><title>${esc(name(a))}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)}` : ""}, ${v.n} round${v.n > 1 ? "s" : ""}</title></circle>
+          <text class="tick" x="${R + 8}" y="${y + 4}">${fmtNum(v.median * sc)}</text></g>`;
       }).join("");
-      const limLine = lim ? `<line class="lim" x1="${x(lim)}" x2="${x(lim)}" y1="${top - 4}" y2="${H - 18}"/>` : "";
-      return `<div class="range"><h3>${esc(title)}</h3><span class="unit">${esc(unit)}</span>
-        <svg viewBox="0 0 410 ${H}" role="img" aria-label="${esc(title)} per app">${ticks}${limLine}${bars}</svg></div>`;
+      return `<div class="range"><h3>${esc(title)}</h3><span class="unit">${esc(unit)} · ${hi ? "higher" : "lower"} is better</span>
+        <svg viewBox="0 0 440 ${H}" role="img" aria-label="${esc(title)} per app">${ticks}${rows}</svg>
+        ${missing.length ? `<span class="unit">No result: ${esc(missing.join(", "))}</span>` : ""}</div>`;
     };
 
-    const appCards = board.map((c) => {
-      const a = APPS.find((x) => x.name === BENCH_APP_NOTES[c]);
-      if (!a) return `<div class="app"><h3>${esc(names[c])}<span>${esc(versions[c] || "")}</span></h3><p>No public details about its internals.</p></div>`;
-      return `<div class="app"><h3>${esc(names[c])}<span>${esc(versions[c] || "")}</span></h3>
-        <dl class="kv">${a.kv.filter(([k]) => /Core|IP stack|License/.test(k)).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
-        <p>${esc(a.note)}</p>${srcLinks(a.src)}</div>`;
+    const lb = x.leaderboard ? Object.entries(x.leaderboard) : [];
+    const rk = (v) => fmtNum(+v.toFixed(2));
+    const board = lb.length ? `<div class="bn-block"><h3>Leaderboard</h3>
+        <p>Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance. Each part is the app's average place
+          across its measures (1 = best), so lower is better. The tie-aware score counts two apps as tied when their best-to-worst rounds overlap.</p>
+        <div class="table-wrap"><table><thead><tr><th class="num">#</th><th>App</th><th class="num">Score</th><th class="num">Tie-aware</th>
+          <th class="num">Traffic</th><th class="num">Idle</th><th class="num">Performance</th></tr></thead><tbody>
+        ${lb.map(([a, v], i) => `<tr${i === 0 ? ' class="lead"' : ""}><td class="num">${i + 1}</td><td><b>${esc(name(a))}</b> <span class="note">${esc(ver(a))}</span></td>
+          <td class="num"><b>${v.score.toFixed(2)}</b></td><td class="num">${v.score_tie.toFixed(2)}</td>
+          <td class="num">${rk(v.traffic)}</td><td class="num">${rk(v.idle)}</td><td class="num">${rk(v.perf)}</td></tr>`).join("")}
+        </tbody></table></div></div>`
+      : `<div class="bn-block"><h3>No leaderboard</h3><p>One round only, so this is a first look rather than a ranking. It shows each app's own limits with no internet in the way.</p></div>`;
+
+    const cc = this.data.chain_cost && this.data.chain_cost["dl_100m.tunnel_energy_per_gb"];
+    const chain = this.exp === "A" && cc ? `<div class="bn-block"><h3>What the chain costs</h3>
+        <p>App energy per GB at 100 Mbit/s, one hop (simple setup) against chain + rules (daily setup). The two ran on different days.</p>
+        <div class="table-wrap"><table><thead><tr><th>App</th><th class="num">One hop (J)</th><th class="num">Chain + rules (J)</th><th class="num">Factor</th></tr></thead><tbody>
+        ${Object.entries(cc).map(([a, v]) => `<tr><td><b>${esc(name(a))}</b>${v.same_version ? "" : ` <span class="note">updated in between (2.3 → 2.4)</span>`}</td>
+          <td class="num">${fmtNum(v.one_hop)}</td><td class="num">${fmtNum(v.chain)}</td><td class="num">${v.factor.toFixed(1)}×</td></tr>`).join("")}
+        </tbody></table></div>
+        <p>Anywhere 2.4 runs about a quarter of its tunnel work on the Mac's performance cores (2.3 used none), and each CPU-second there
+          costs about 3× the energy. On the chain, 2.3 measured 2.2 J/GB in a one-round check, so most of its jump comes from the update.</p></div>` : "";
+
+    const cards = BENCH_CARDS[this.exp].map(([g, list]) => {
+      const html = list.map(plot).join("");
+      return html ? `<div class="bn-block"><h3>${esc(g)}</h3><div class="ranges">${html}</div></div>` : "";
     }).join("");
 
-    const sessions = sum.sessions.slice().sort().map((s) => `${fmtDate(s)} (${s.endsWith("-L") ? "lab" : "real server"})`).join(" · ");
-    $("#bn-lede").textContent = `${nApps} client apps send the same VLESS + REALITY traffic through the same server on one Mac, on battery. The ranking is about cost: power, CPU, memory and wakeups. Overall leader so far: ${names[board[0]] || "none yet"}.`;
+    const appCards = apps.map((c) => {
+      const a = APPS.find((y) => y.name === BENCH_APP_NOTES[c]);
+      return a ? `<div class="app"><h3>${esc(name(c))}<span>${esc(ver(c))}</span></h3>
+        <dl class="kv">${a.kv.filter(([k]) => /Core|IP stack|License/.test(k)).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+        <p>${esc(a.note)}</p>${srcLinks(a.src)}</div>` : "";
+    }).join("");
+
     $("#bn-body").innerHTML = `
-      <div class="bn-meta"><span>Mac <b>${esc(model || "unknown")}</b></span><span>Sessions <b>${esc(sessions)}</b></span><span>${live ? "Live results" : "Results snapshot"}</span></div>
-      <div class="bn-block"><h3>Leaderboard</h3>
-        <p>Each app's rank (1 = best) in every reliable measure, averaged. Apps whose best-to-worst ranges overlap share a rank, so a gap that could be noise doesn't count. Failed tests are shown, not ranked.</p>
-        <div class="table-wrap"><table><thead><tr><th class="num">#</th><th>App</th><th class="num">Avg rank</th><th class="num">Failed</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-        <details><summary class="note">Measure columns 1–${used.length}</summary><ol class="note" style="list-style:none;padding:0">${key}</ol></details></div>
-      <div class="bn-block"><h3>Spread per app</h3>
-        <p>Line = best to worst run, dot = median. Green apps share first place. Lower is better in every chart.</p>
-        <div class="ranges">${PLOTS.map(plot).join("")}</div></div>
-      <div class="bn-block"><h3>What's inside each app</h3>
-        <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit, so a light footprint here matters more there.</p>
-        <div class="apps">${appCards}</div></div>
-      <p class="note">The Mac numbers stand in for iPhone ones: same apps and code, but no phone battery was measured.</p>`;
+      <div class="bn-meta"><span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>
+        <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
+        <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div>
+      <p class="bn-setup">${esc(x.setup.replace(/->/g, "→"))}${x.note ? ` ${esc(x.note)}` : ""}</p>
+      ${board}${cards}${chain}
+      <p class="note">Line = best to worst round, dot = median, number = median. Green apps share first place.
+        App power and energy come from macOS's per-process counters for the tunnel process; whole-Mac energy from the battery's power sensor.
+        Every app window was closed during the tests: an open window costs more than the tunnel itself.</p>
+      ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
+        <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
+        <div class="apps">${appCards}</div></div>` : ""}
+      <p class="note">One Mac, one network, one week of October 2026; results can change with app updates. The Mac numbers stand in for iPhone ones: same apps and code, but no phone battery was measured.</p>`;
   }
 };
 function niceStep(raw) { const p = 10 ** Math.floor(Math.log10(raw || 1)), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }

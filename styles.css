@@ -213,6 +213,7 @@ h1 { font: 500 26px/1.15 var(--f-display); font-stretch: 87.5%; letter-spacing: 
 #bn-body { display: grid; gap: 34px; margin-top: 24px; }
 .bn-meta { display: flex; flex-wrap: wrap; gap: 6px 22px; font: 400 12px/1.5 var(--f-data); color: var(--muted); }
 .bn-meta b { color: var(--ink); font-weight: 500; }
+.bn-setup { margin: 0; font-size: 13.5px; color: var(--ink-2); max-width: 74ch; }
 .bn-block { display: grid; gap: 10px; min-width: 0; }
 .bn-block h3 { font: 600 17px/1.25 var(--f-body); }
 .bench { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--rule); }
@@ -232,7 +233,7 @@ tr.lead td { background: var(--accent-soft); }
 .range { display: grid; gap: 6px; min-width: 0; }
 .range h3 { font: 600 14px/1.3 var(--f-body); }
 .range .unit { font: 400 11px/1.3 var(--f-data); color: var(--muted); }
-.range svg { width: 100%; max-width: 440px; height: auto; display: block; overflow: visible; }
+.range svg { width: 100%; max-width: 480px; height: auto; display: block; overflow: visible; }
 .range .ax { stroke: var(--rule); }
 .range .tick { font: 400 10px var(--f-data); fill: var(--muted); }
 .range .lbl { font: 500 11.5px var(--f-body); fill: var(--ink); }
