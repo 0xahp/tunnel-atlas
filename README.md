@@ -41,6 +41,12 @@ Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance;
 - Happ and V2Box ranked last in the Basic setup and were the two slowest in the top-speed test.
 - For the whole Mac, the apps were within a few percent of each other.
 
+**How much this tells you**
+
+- **A small slice of the battery.** While downloading at 100 Mbit/s, the tunnel app itself drew 0.3–4% of the Mac's total power (4–52 mW of about 1.2 W). Whole-Mac energy per GB stayed within about 15% across apps and didn't follow the app ranking.
+- **A field test, not a long-term study.** One Mac, one network, 1–6 rounds over a few days, with apps updating mid-test.
+- **A Mac on Wi-Fi, not a phone on cellular.** On a phone, the 4G/5G radio usually costs far more than the app's own CPU, and idle wakeups likely matter more. No phone battery was measured, so results on an iPhone may differ. Read this as a guide to how efficient each app is relative to the others, not as a battery-life prediction.
+
 **[See every measure for all three setups →](https://0xahp.github.io/tunnel-atlas/#bench)** idle power, power and CPU under load, top speed and time to first byte, with app versions.
 
 ## Also on the site
@@ -51,7 +57,7 @@ Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance;
 
 ## Notes
 
-- One Mac, one network, one week of October 2026. Results can change with app updates; the site lists the versions tested.
+- Results can change with app updates; the site lists the versions tested.
 - Censorship status reflects reports up to October 2026 and changes week to week.
 - Battery figures for proxy protocols in the timeline are estimates; the only phone measurement covers five classic VPNs (2022).
 - A static site: plain HTML, CSS and JavaScript, no build step.

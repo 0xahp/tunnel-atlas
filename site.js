@@ -381,8 +381,18 @@ const Bench = {
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
         <div class="apps">${appCards}</div></div>` : ""}
-      <p class="note">One Mac, one network, one week of October 2026; results can change with app updates. Every app window was closed during the tests,
-        since an open window costs more than the tunnel. The Mac numbers stand in for iPhone ones: similar code (same cores), but no phone battery was measured.</p>`;
+      <div class="bn-block"><h3>How much this tells you</h3>
+        <ul class="bn-limits">
+          <li><b>A small slice of the battery.</b> While downloading at 100 Mbit/s, the tunnel app itself drew 0.3–4% of the Mac's total power
+            (4–52 mW of about 1.2 W). Whole-Mac energy per GB stayed within about 15% across apps (91–105 J) and didn't follow the app ranking,
+            so the differences above matter less than the table makes them look.</li>
+          <li><b>A field test, not a long-term study.</b> One Mac, one network, 1–6 rounds over a few days in October 2026, with apps updating
+            mid-test. Results can change with app updates. Every app window was closed, since an open window costs more than the tunnel.</li>
+          <li><b>A Mac on Wi-Fi, not a phone on cellular.</b> On a phone, the 4G/5G radio usually costs far more than the app's own CPU, and each
+            wakeup can keep the radio and CPU busy, so idle wakeups likely matter more there. iOS also caps a tunnel's memory at about 50 MiB, and some
+            iPhone apps differ from their Mac versions. No phone battery was measured: read this as a guide to how efficient each app is
+            relative to the others, not as a battery-life prediction.</li>
+        </ul></div>`;
   }
 };
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
