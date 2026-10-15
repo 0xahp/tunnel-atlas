@@ -83,7 +83,7 @@ main { min-width: 0; grid-column: 1; grid-row: 1; }
 .site-foot { display: none; max-width: var(--col); margin: 0 auto; padding: 0 24px 48px; font-size: 13px; color: var(--muted); }
 
 section[role="tabpanel"] { padding: 40px 24px 72px; }
-#setup { max-width: calc(var(--col) + 48px); margin: 0 auto; }
+#setup, #bench { max-width: calc(var(--col) + 48px); margin: 0 auto; }
 .sec-head, .tl-head { max-width: 720px; display: grid; gap: 10px; }
 .tl-head { margin-inline: auto; max-width: var(--col); }
 h1 { font: 500 30px/1.2 var(--f-display); letter-spacing: -0.015em; }
@@ -218,10 +218,8 @@ h1 { font: 500 30px/1.2 var(--f-display); letter-spacing: -0.015em; }
 .flow-key span { display: inline-flex; gap: 6px; align-items: center; }
 
 /* ---------- Bench ---------- */
-.bench { margin-top: 64px; padding-top: 36px; border-top: 1px solid var(--rule); display: grid; gap: 18px; justify-items: start; }
-.bench > .sec-head, .bench > #bn-body { justify-self: stretch; }
 .sec-h2 { font: 500 24px/1.2 var(--f-display); letter-spacing: -0.01em; }
-#bn-body { display: grid; gap: 32px; margin-top: 6px; }
+#bn-body { display: grid; gap: 32px; }
 .bn-meta { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 13px; color: var(--muted); }
 .bn-meta b { color: var(--ink); font-weight: 500; }
 .bn-block > p.bn-setup { margin: 0; font-size: 14.5px; color: var(--ink-2); max-width: 70ch; }

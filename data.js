@@ -9,7 +9,7 @@ const SRC = {
   notesFlow: ["Traffic-flow notes (unpublished)", null, "local"],
   history: ["Protocol history report (unpublished)", null, "local"],
   cores: ["Proxy cores catalog (unpublished)", null, "local"],
-  bench: ["Client-app benchmark (Routes tab)", "index.html#setup", "data"],
+  bench: ["Client-app benchmark (Benchmark tab)", "index.html#bench", "data"],
   battery: ["iOS VPN battery fact-check (unpublished)", null, "local"],
 
   // Papers and measurements
@@ -538,7 +538,7 @@ const ROUTES = {
     used: ["Hysteria2, TUIC", "A common UDP backup"], src: ["notesFlow", "notesPerf"]
   },
   relay: {
-    name: "Relay chain", sees: "A domestic connection", extra: "2 servers", latency: "~360 ms relay to US exit (field test)",
+    name: "Relay chain", sees: "A domestic connection", extra: "2 servers", latency: "+1 relay hop (~2× RTT)",
     enc: [[0, 2, "REALITY / Hy2"], [2, 4, "REALITY + smux (TCP)"]], legs: ["", "domestic", "", "", "website's own HTTPS"],
     hops: [
       { zone: "home", title: "Your device", sub: "proxy app", desc: "Connects to a server inside your own country. Domestic sites go direct (split routing).", src: ["xray2213"],

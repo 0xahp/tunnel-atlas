@@ -1,4 +1,4 @@
-/* Tunnel Atlas: renders index.html from data.js. Two tabs: timeline; setup (picks, their flow, and the client-app benchmark). */
+/* Tunnel Atlas: renders index.html from data.js. Three tabs: benchmark; setup (picks and their flow); timeline. */
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
@@ -24,12 +24,11 @@ themeBtn.addEventListener("click", () => {
 });
 
 /* ---------- Tabs ---------- */
-const TABS = ["setup", "timeline"];
+const TABS = ["bench", "setup", "timeline"];
 const rendered = {};
 function showTab(id, focus) {
-  const toBench = id === "bench";
-  if (id === "picks" || toBench) id = "setup"; // old links
-  if (!TABS.includes(id)) id = "setup";
+  if (id === "picks") id = "setup"; // old link
+  if (!TABS.includes(id)) id = "bench";
   for (const t of TABS) {
     const on = t === id, btn = $("#tab-" + t);
     btn.setAttribute("aria-selected", on);
@@ -37,10 +36,9 @@ function showTab(id, focus) {
     $("#" + t).hidden = !on;
   }
   if (focus) $("#tab-" + id).focus();
-  if (!rendered[id]) { rendered[id] = true; ({ timeline: Timeline, setup: Picks })[id].init(); }
+  if (!rendered[id]) { rendered[id] = true; ({ timeline: Timeline, setup: Picks, bench: Bench })[id].init(); }
   if (id === "timeline") Timeline.layout();
   if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
-  if (toBench && $("#bench")) { Bench.jump = true; $("#bench").scrollIntoView(); }
 }
 for (const t of TABS) $("#tab-" + t).addEventListener("click", () => { showTab(t); window.scrollTo(0, 0); });
 $(".rail-tabs").addEventListener("keydown", (e) => {
@@ -228,7 +226,6 @@ const Picks = {
     seg($("#pk-goal"), GOALS, "goal");
     $("#pk-list").addEventListener("click", (e) => { const b = e.target.closest(".pick"); if (b) { this.idx = +b.dataset.i; this.render(); } });
     this.render();
-    if ($("#bench")) Bench.init();
   },
   render() {
     $("#pk-goal").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.goal));
@@ -284,7 +281,7 @@ const Picks = {
 };
 
 /* ==================== Client-app benchmark ====================
-   Reads bench/experiments.json, copied from proxy-bench by sync-bench.sh. Three setups, never pooled. */
+   Reads bench/experiments.json. Three setups, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole" };
 const BENCH_APP_NOTES = { anywhere: "Anywhere", sfm: "sing-box for Apple", karing: "Karing", shadowrocket: "Shadowrocket", egern: "Egern" };
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
@@ -316,7 +313,6 @@ const Bench = {
     $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}</button>`).join("");
     $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.render(); } });
     this.render();
-    if (this.jump) { this.jump = false; $("#bench").scrollIntoView(); }
   },
   render() {
     $("#bn-exp").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.exp));
@@ -390,4 +386,4 @@ const Bench = {
 };
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
 
-showTab(location.hash.slice(1) || "setup");
+showTab(location.hash.slice(1) || "bench");

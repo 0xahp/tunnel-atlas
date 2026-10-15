@@ -23,7 +23,9 @@
 <div class="shell">
   <nav class="rail" aria-label="Sections">
     <div class="rail-tabs" role="tablist" aria-orientation="vertical">
-      <button role="tab" id="tab-setup" aria-controls="setup" aria-selected="true">
+      <button role="tab" id="tab-bench" aria-controls="bench" aria-selected="true">
+        <span class="tab-name">Benchmark</span><span class="tab-hint">proxy client apps, measured</span></button>
+      <button role="tab" id="tab-setup" aria-controls="setup" aria-selected="false" tabindex="-1">
         <span class="tab-name">Routes</span><span class="tab-hint">who sees what, end to end</span></button>
       <button role="tab" id="tab-timeline" aria-controls="timeline" aria-selected="false" tabindex="-1">
         <span class="tab-name">Timeline</span><span class="tab-hint">58 techniques, newest first</span></button>
@@ -32,6 +34,16 @@
   </nav>
 
   <main>
+    <section id="bench" role="tabpanel" aria-labelledby="tab-bench">
+      <div class="sec-head">
+        <h1>Proxy client benchmark</h1>
+        <p class="lede">Up to eight Mac apps sent the same traffic through the same servers, one app at a time, on battery.
+          Three setups, measured separately: pick one to see its leaderboard and every measure behind it.</p>
+      </div>
+      <div class="pick-controls"><div class="seg" id="bn-exp" role="radiogroup" aria-label="Benchmark setup"></div></div>
+      <div id="bn-body"><p class="note">Loading benchmark results…</p></div>
+    </section>
+
     <section id="timeline" role="tabpanel" aria-labelledby="tab-timeline" hidden>
       <div class="tl-head">
         <h1>Scroll back through thirty years of tunnels</h1>
@@ -52,7 +64,7 @@
       </div>
     </section>
 
-    <section id="setup" role="tabpanel" aria-labelledby="tab-setup">
+    <section id="setup" role="tabpanel" aria-labelledby="tab-setup" hidden>
       <div class="sec-head">
         <h1>What to run in 2026, and the path it takes</h1>
         <p class="lede">Pick your situation and compare the top setups. Each one shows who sees what on the way from your device to the website.</p>
@@ -65,16 +77,6 @@
         <div class="flow" id="pk-flow"></div>
       </div>
       <p class="note" id="pk-note"></p>
-
-      <div class="bench" id="bench">
-        <div class="sec-head">
-          <h2 class="sec-h2">Proxy client benchmark</h2>
-          <p class="lede">Up to eight Mac apps sent the same traffic through the same servers, one app at a time, on battery.
-            Three setups, measured separately: pick one to see its leaderboard and every measure behind it.</p>
-        </div>
-        <div class="seg" id="bn-exp" role="radiogroup" aria-label="Benchmark setup"></div>
-        <div id="bn-body"><p class="note">Loading benchmark results…</p></div>
-      </div>
     </section>
     <p class="site-foot">Every figure links to its source on the <a href="sources.html">sources page</a>.</p>
   </main>
