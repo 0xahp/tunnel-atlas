@@ -5,7 +5,7 @@
 reports/
 research_notes/
 *.json
-!bench/summary.json
+!bench/experiments.json
 *.env
 *.key
 *.pem
