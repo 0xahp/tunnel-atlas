@@ -6255,6 +6255,31 @@
       }
      }
     }
+   ],
+   "rechecks": [
+    {
+     "app": "anywhere",
+     "version": "2.4 (403)",
+     "session": "20261017-004316-profile",
+     "note": "Anywhere 2.4 was rechecked alone on 17 Oct after the update: same lab and Mac, 1 round, with a profiler attached (adds a little CPU). Top download 4.1 Gbit/s. Idle was not measured.",
+     "values": {
+      "tcp_up_1.gbps": 5.798101190340089,
+      "tcp_up_1.tunnel_cpu_pct": 230.7436338811723,
+      "tcp_up_1.tunnel_power_w": 2.771381990506992,
+      "tcp_up_1.tunnel_cpu_per_gb": 3.213600559986761,
+      "tcp_up_1.tunnel_energy_per_gb": 3.859744499480726,
+      "tcp_up_500m.gbps": 0.49995468211248845,
+      "tcp_up_500m.tunnel_cpu_pct": 52.30815307136577,
+      "tcp_up_500m.tunnel_power_w": 0.15350832091005664,
+      "tcp_up_500m.tunnel_cpu_per_gb": 8.455264045227896,
+      "tcp_up_500m.tunnel_energy_per_gb": 2.4813596164698573,
+      "tcp_down_1.gbps": 4.1433886070095785,
+      "tcp_down_1.tunnel_cpu_pct": 146.440515699776,
+      "tcp_down_1.tunnel_power_w": 2.0555305222528295,
+      "tcp_down_1.tunnel_cpu_per_gb": 2.8521263810640503,
+      "tcp_down_1.tunnel_energy_per_gb": 4.0034226877614225
+     }
+    }
    ]
   }
  ],

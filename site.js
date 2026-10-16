@@ -342,6 +342,12 @@ const Bench = {
       const tip = `${name(a)}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} over ${v.n} rounds` : ""}`;
       return `<td class="num${best ? " best" : worst ? " worst" : ""}" title="${esc(tip)}">${fmtNum(v.median * sc)}</td>`;
     };
+    // later single-app runs: shown under the app's row, outside the stats and the colours
+    const rechecks = x.rechecks || [];
+    const recheckRows = (a) => rechecks.filter((r) => r.app === a).map((r) => `<tr>${lb ? "<td></td>" : ""}
+        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(r.version.replace(/\s*\(.*\)$/, ""))} · ${esc(date(r.session))}*</span></td>${lb ? "<td></td>" : ""}
+        ${cols.map(([, , , ca, me, sc]) => { const v = r.values[`${ca}.${me}`];
+          return v == null ? `<td class="num na" title="Not measured">–</td>` : `<td class="num">${fmtNum(v * sc)}</td>`; }).join("")}</tr>`).join("");
     const groups = [];
     cols.forEach(([g]) => { const last = groups[groups.length - 1]; if (last && last[0] === g) last[1]++; else groups.push([g, 1]); });
     const lead = lb ? 3 : 1;
@@ -351,7 +357,7 @@ const Bench = {
       <tbody>${apps.map((a, i) => `<tr${lb && i === 0 ? ' class="lead"' : ""}>${lb ? `<td class="num">${i + 1}</td>` : ""}
         <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}</span></td>
         ${lb ? `<td class="num" title="Tie-aware score ${lb[a].score_tie.toFixed(2)}"><b>${lb[a].score.toFixed(2)}</b></td>` : ""}
-        ${cols.map((c) => cell(c, a)).join("")}</tr>`).join("")}</tbody></table></div>`;
+        ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}</tbody></table></div>`;
 
     const cc = this.data.chain_cost && this.data.chain_cost["dl_100m.tunnel_energy_per_gb"];
     const chain = this.exp === "A" && cc ? `<div class="bn-block"><h3>What the chain costs</h3>
@@ -382,6 +388,7 @@ const Bench = {
           <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
           ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
           App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p>
+        ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
         ${this.exp === "A" ? `<p class="bn-callout"><b>${esc(BENCH_IPHONE_NOTE.split(": ")[0])}</b>${esc(BENCH_IPHONE_NOTE.charAt(BENCH_IPHONE_NOTE.indexOf(": ") + 2).toUpperCase() + BENCH_IPHONE_NOTE.slice(BENCH_IPHONE_NOTE.indexOf(": ") + 3))}</p>` : ""}</div>
       ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
