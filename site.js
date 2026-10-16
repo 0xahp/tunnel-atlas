@@ -285,6 +285,11 @@ const Picks = {
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole" };
 const BENCH_APP_NOTES = { anywhere: "Anywhere", sfm: "sing-box for Apple", karing: "Karing", shadowrocket: "Shadowrocket", egern: "Egern" };
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
+// keep in sync with make-static.py and proxy-bench/results/RESULTS.md
+const BENCH_IPHONE_NOTE = "iPhone check (16 Oct): on an iPhone 11 Pro (iOS 27, same chain + rules, 2 rounds, whole-phone power from the battery gauge over USB), "
+  + "Anywhere 2.4 and Egern tied: 0.93 W vs 0.93–0.95 W at a steady 50 Mbit/s download (about 148–152 J per GB for the whole phone), "
+  + "the same single-connection speed (70–75 Mbit/s) and page first-byte times within run-to-run noise. Idle draw was within noise of no VPN for both. "
+  + "The Mac's ~4× gap in app energy per GB is in the app's own small share of power and doesn't show at the whole-device level.";
 const BENCH_SETUPS = {
   A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."],
   B: ["Basic", "The simplest setup: one proxy, no rules, everything through the tunnel."],
@@ -376,7 +381,8 @@ const Bench = {
         <p>Each number is the app's median over all rounds; hover it for the range. ↓ lower is better, ↑ higher is better.
           <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
           ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
-          App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p></div>
+          App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p>
+        ${this.exp === "A" ? `<p class="note">${esc(BENCH_IPHONE_NOTE)}</p>` : ""}</div>
       ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
