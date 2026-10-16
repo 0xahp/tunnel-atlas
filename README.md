@@ -42,6 +42,7 @@ Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance;
 - Anywhere woke the CPU least when idle in both real-network setups, but in Chain + rules (after its 2.4 update) its average idle power was the highest.
 - Happ and V2Box ranked last in the Basic setup and were the two slowest in the top-speed test.
 - For the whole Mac, the apps were within a few percent of each other.
+- On an iPhone 11 Pro (iOS 27, Chain + rules, 2 rounds, whole-phone power), Anywhere and Egern tied: 0.93 W vs 0.93–0.95 W at a steady 50 Mbit/s download, with the same speed and page times within noise. The Mac's ~4× gap in app energy per GB is in the app's own small share of power and doesn't show at the whole-device level.
 
 **[See every measure for all three setups →](https://0xahp.github.io/tunnel-atlas/#bench)** average idle power, power and CPU under load, top speed and time to first byte, with app versions.
 
