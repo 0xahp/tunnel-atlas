@@ -382,7 +382,7 @@ const Bench = {
           <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
           ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
           App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p>
-        ${this.exp === "A" ? `<p class="note">${esc(BENCH_IPHONE_NOTE)}</p>` : ""}</div>
+        ${this.exp === "A" ? `<p class="bn-callout"><b>${esc(BENCH_IPHONE_NOTE.split(": ")[0])}</b>${esc(BENCH_IPHONE_NOTE.charAt(BENCH_IPHONE_NOTE.indexOf(": ") + 2).toUpperCase() + BENCH_IPHONE_NOTE.slice(BENCH_IPHONE_NOTE.indexOf(": ") + 3))}</p>` : ""}</div>
       ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
