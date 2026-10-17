@@ -225,7 +225,7 @@ const TECHS = [
     one: "Mesh VPNs that link your own devices directly, punching through home routers.",
     how: "A coordination server tells devices how to reach each other; then they talk directly over WireGuard (Tailscale) or ZeroTier's own protocol. A relay is used when direct fails.",
     hides: "Doesn't. Not built for censorship.",
-    over: "UDP (relay over HTTPS)", cores: "sing-box, mihomo (as a hop)", status: "Active; private networking, not circumvention.", src: ["tailscalenat"] },
+    over: "UDP (relay over HTTPS)", cores: "As a hop: sing-box (Tailscale only), mihomo (both)", status: "Active; private networking, not circumvention.", src: ["tailscalenat"] },
   { id: "masque", name: "MASQUE", year: "RFC 2022–23", y: 2022, fam: "vpn", cls: "edge",
     one: "A VPN carried inside HTTP/3, so it looks like ordinary web traffic. Powers Cloudflare WARP.",
     how: "An HTTP/3 request (CONNECT-IP or CONNECT-UDP) opens a tunnel over QUIC on UDP 443.",
