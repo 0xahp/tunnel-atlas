@@ -674,7 +674,7 @@ const VERDICTS = {
 /* ---------- Apps ---------- */
 const APPS = [
   { name: "Anywhere", by: "Argsment Limited · NodePassProject", open: true, v: "holds",
-    kv: [["Platforms", "iPhone, iPad, Apple TV; on Mac as an iPad app"], ["Core", "Swift 6 + vendored C (ngtcp2, BLAKE3, libyaml)"], ["IP stack", "AnywhereIP (pure Swift)"], ["License", "GPL-3.0"]],
+    kv: [["Platforms", "iPhone, iPad, Apple TV; on Mac as an iPad app"], ["Core", "Swift 6, with its own QUIC stack (AnywhereQUIC, replaced ngtcp2 in 2.4) and IP stack (AnywhereIP); a little vendored C for hashing (BLAKE2, BLAKE3) and YAML (libyaml)"], ["IP stack", "AnywhereIP (pure Swift)"], ["License", "GPL-3.0"]],
     note: "Buffer budgets are 16 MB TCP and 16 MB UDP, in a mutex-guarded class, not an actor with 10/14 MB caps. The default TLS fingerprint is Chrome 133.",
     src: ["anywhere", "tconst", "anyreality"] },
   { name: "sing-box for Apple", by: "SagerNet", open: true, v: "holds",
@@ -749,7 +749,7 @@ const CLAIMS = [
   ["Protocol", "MITM decryption has a large CPU and battery cost", "unverified", "The mechanism is real: TLS is terminated and re-encrypted for each decrypted host. Nobody has measured the cost.", ["surgemitm"]],
   ["Protocol", "AnyTLS and smux efficiency or head-of-line-blocking claims, citing the sing-box docs", "unverified", "The sing-box docs make no performance or head-of-line-blocking statements.", ["sbanytls", "mux"]],
   ["Battery", "Per-protocol phone battery figures in %/hour", "unverified", "They come from vendor blogs with no method and disagree by 2–5×. The only independent measurement is one Android poster.", ["fed4fire"]],
-  ["App", "Anywhere: Swift 6 + C, AnywhereIP stack, ngtcp2, Nowhere protocol", "holds", "Confirmed in code at commit 658e7ac.", ["anywhere"]],
+  ["App", "Anywhere 2.4: Swift 6, own AnywhereIP and AnywhereQUIC stacks (2.3 used ngtcp2), Nowhere protocol", "holds", "Confirmed in code at commit 0abd963 (2.4).", ["anywhere"]],
   ["App", "Anywhere FlowBufferLedger is an actor with a 10 MB soft / 14 MB hard cap", "wrong", "It is a mutex-guarded class with 16 MB TCP and 16 MB UDP budgets, and it evicts the largest flow.", ["ledger", "tconst"]],
   ["App", "Anywhere uses Swift TLS with a JA4 Safari fingerprint", "partly", "A Safari 26.3 fingerprint is available, but Chrome 133 is the default. \"JA4\" appears nowhere in the code.", ["anyreality"]],
   ["App", "Shadowrocket is by \"Pan Guoting\", in C/C++ on lwIP", "unverified", "The seller is Shadow Launch Technology Ltd. Its internals are unpublished.", ["srstore"]],
@@ -780,7 +780,7 @@ const NUMBERS = [
   ["AES-256-GCM vs ChaCha20", "661–3,131 vs 327–1,088 MB/s", "M2 Pro, 1 core, ring, 100 B–1 KB", "2025", "vardanian"],
   ["QUIC vs TCP+TLS", "up to −45.2% data rate", "fast wired links, desktop receivers", "2024", "zhang"],
   ["L2TP header overhead", "40 B", "L2TP/UDP/IP", "–", "cisco"],
-  ["Anywhere buffer budgets", "16 MB TCP + 16 MB UDP", "commit 658e7ac", "2026", "tconst"]
+  ["Anywhere buffer budgets", "16 MB TCP + 16 MB UDP", "commit 0abd963 (2.4)", "2026", "tconst"]
 ];
 
 
