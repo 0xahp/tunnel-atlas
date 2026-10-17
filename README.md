@@ -12,10 +12,10 @@ Eight proxy client apps for macOS (Anywhere, SFM, Egern, Shadowrocket, Karing, R
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/basic-efficiency-dark.svg">
-  <img alt="Basic setup, median of 4 rounds. Energy per GB at 100 Mbit/s: Egern 0.31 J, SFM 0.57, Anywhere 0.95, Karing 1.0, Shadowrocket 1.3, V2Box 2.1, Rabbit Hole 2.3, Happ 3.4. Idle wakeups per second: Anywhere 0.26, Shadowrocket 1.8, Egern 4.1, Karing 9.2, SFM 12, Rabbit Hole 15, V2Box 51, Happ 83." src="assets/basic-efficiency-light.svg">
+  <img alt="Basic setup, median of 4 rounds. Energy per GB at 100 Mbit/s: Egern 0.31 J, SFM 0.57, Anywhere 0.95, Karing 1.0, Shadowrocket 1.3, V2Box 2.1, Rabbit Hole 2.3, Happ 3.4. Idle wakeups per second: Anywhere 0.26, Shadowrocket 1.8, Egern 4.1, Karing 9.2, SFM 12, Rabbit Hole 15, V2Box 51, Happ 83. Lab top upload on one stream, Gbit/s: SFM 10.2, Anywhere 2.4 5.8, Karing 4.8, Egern 3.5, Rabbit Hole 1.9, Shadowrocket 1.5, V2Box 0.39, Happ 0.25." src="assets/basic-efficiency-light.svg">
 </picture>
 
-*Basic setup (one proxy, no rules), median of 4 rounds. App energy and wakeups are macOS's own per-process figures for each app's tunnel process.*
+*Left and middle: basic setup (one proxy, no rules), median of 4 rounds, with Anywhere 2.3. App energy and wakeups are macOS's own per-process figures for each app's tunnel process. Right: top upload in the lab on the same Mac (1 round); Anywhere's bar is its 2.4 recheck from 17 Oct, run alone with a profiler attached.*
 
 | Place | App | Score (lower is better) |
 |---|---|---|
