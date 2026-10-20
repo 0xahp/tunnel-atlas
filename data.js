@@ -687,7 +687,7 @@ const APPS = [
     note: "Buffer budgets are 16 MB TCP and 16 MB UDP, in a mutex-guarded class, not an actor with 10/14 MB caps. The default TLS fingerprint is Chrome 133.",
     src: ["anywhere", "tconst", "anyreality"] },
   { name: "sing-box for Apple", by: "SagerNet", open: true, v: "holds",
-    kv: [["Platforms", "iOS, macOS, tvOS"], ["Core", "Go via gomobile (libbox)"], ["IP stack", "mixed by default (1.14); new built-in stack in 1.15"], ["License", "GPL-3.0 (plus a name-use clause)"]],
+    kv: [["Platforms", "iOS, macOS, tvOS"], ["Core", "Go via gomobile (libbox)"], ["IP stack", "mixed by default (1.14); new built-in stack in 1.15"], ["License", "GPL-3.0 (the sing-box core adds a name-use clause)"]],
     note: "Gets the tun fd through KVC, and sets the Go memory limit to 50 MiB on iOS. Jetsam kills at 50 MB have been reported in its issues.",
     src: ["sbapple", "sbtun", "sboom", "sb3976"] },
   { name: "WireGuard", by: "WireGuard project", open: true, v: "holds",

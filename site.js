@@ -285,7 +285,16 @@ const Picks = {
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
   streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI" };
-const BENCH_APP_NOTES = { anywhere: "Anywhere", sfm: "sing-box for Apple", karing: "Karing", shadowrocket: "Shadowrocket", egern: "Egern" };
+// core read from the Go modules inside each installed Mac app (20 Oct); license from the project's GitHub page; blank = not sure
+const BENCH_CORES = [
+  ["sing-box", "Go; the SagerNet core", { sfm: ["libbox (gomobile)", "GPL-3.0"], cli: ["the core itself", "GPL-3.0 + name clause"],
+    karing: ["LibVpnCore", "GPL-3.0 + name clause", "mixed (as tested)"] }],
+  ["sing-box and Xray", "both cores built in", { throne: ["ThroneCore, a separate process", "GPL-3.0"], streisand: ["sing-box 1.14 + Xray"] }],
+  ["mihomo", "Go; the Clash Meta core", { flclash: ["", "GPL-3.0"], verge: ["", "GPL-3.0"], koala: ["", "GPL-3.0"], clash: ["mihomo 1.19.32"],
+    rabbithole: [""], clashplus: [""] }],
+  ["Xray", "Go; the XTLS core", { onexray: ["libXray", "GPL-3.0"], happ: ["libXray"], v2box: [""], incy: [""] }],
+  ["Own core", "no sing-box, Xray or mihomo inside", { anywhere: ["Swift", "GPL-3.0", "AnywhereIP (own, Swift)"], surge: [""], shadowrocket: [""],
+    egern: ["", "", "own user-space stack (vendor's note, 2.15)"] }]];
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
 // keep in sync with make-static.py and proxy-bench/results/RESULTS.md
 const BENCH_IPHONE_NOTE = "iPhone check (16 Oct): on an iPhone 11 Pro (iOS 27, same chain + rules, 2 rounds, whole-phone power from the battery gauge over USB), "
@@ -302,24 +311,28 @@ const BENCH_LAB_METHOD = "One MacBook Air M1 (macOS 27.0.1), on battery, screen 
   + "that its bytes went through the app's tunnel; a test with any keyboard or trackpad input was thrown out and repeated. MTU is the tunnel's packet "
   + "size as macOS reported it: we asked for 4000 where we could; apps that stay at 1500 handle about 2.7× more packets per GB "
   + "(Happ's MTU setting has no effect on the Mac tunnel). Karing used its mixed stack; its four-connection download is from one round. Versions as "
-  + "installed on 20 Oct 2026. The sing-box command line (no app, no GUI) is shown below the ranking as a reference for the core's own cost.";
+  + "installed on 20 Oct 2026. The sing-box command line (no app, no GUI) is ranked with the apps: it shows what the core alone costs. "
+  + "Score (out of 100) = 30% speed + 70% efficiency, each as a ratio to the best app: 100 × (average speed ÷ best average speed)^0.3 × "
+  + "(best energy per GB ÷ energy per GB)^0.7. Efficiency weighs more because every app near the top is already far faster than any real internet "
+  + "connection. Click a column header to sort by that column instead.";
 const BENCH_SETUPS = {
-  S: ["Speed", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, power aside. Upload and download, over one connection and over four; Average is the mean of the four."],
-  E: ["Efficiency", "The same lab, with every app moving the same steady 200 Mbit/s download: how much energy, CPU time and memory its tunnel needs for it."],
+  L: ["Lab: speed + efficiency", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and how much energy, CPU time and memory its tunnel needs for a steady 200 Mbit/s download. Ranked by a score of 30% speed and 70% efficiency; click any column header to sort by it."],
   A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."]
 };
-// table columns per setup: [group, label, unit, case, metric, scale, higher is better]
+// table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
 const IDLE_COLS = (c) => [["Idle", "Wakeups", "per s", c, "tunnel_wakeups_per_s", 1], ["Idle", "Avg power", "µW", c, "tunnel_power_w", 1e6]];
 const LOAD_COLS = (g, c) => [[g, "Power", "mW", c, "tunnel_power_w", 1e3], [g, "Energy", "J per GB", c, "tunnel_energy_per_gb", 1], [g, "CPU", "%", c, "tunnel_cpu_pct", 1]];
 const BENCH_COLS = {
   A: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Full speed", "Speed", "Mbit/s", "dl_max", "mbps", 1, true], ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],
-  S: [["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["One connection", "Upload", "Gbit/s", "up_1", "gbps", 1, true], ["One connection", "Download", "Gbit/s", "down_1", "gbps", 1, true],
-    ["Four connections", "Upload", "Gbit/s", "up_4", "gbps", 1, true], ["Four connections", "Download", "Gbit/s", "down_4", "gbps", 1, true]],
-  E: [["At 200 Mbit/s download", "Energy", "J per GB", "down_200", "tunnel_energy_per_gb", 1], ["At 200 Mbit/s download", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1],
-    ["At 200 Mbit/s download", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]]
+  L: [["", "Score", "of 100", "lab", "score", 1, true],
+    ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
+    ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
+    ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "tunnel_energy_per_gb", 1], ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1],
+    ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]]
 };
 const Bench = {
-  exp: "S",
+  exp: "L",
+  sort: { i: 0, rev: false },   // lab table: column to sort by (best first), rev = worst first
   async init() {
     try {
       const r = await fetch("bench/experiments.json", { cache: "no-store" });
@@ -331,7 +344,9 @@ const Bench = {
       return;
     }
     $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}</button>`).join("");
-    $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.render(); } });
+    $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = { i: 0, rev: false }; this.render(); } });
+    $("#bn-body").addEventListener("click", (e) => { const b = e.target.closest(".bn-sort"); if (!b) return;
+      const i = +b.dataset.i; this.sort = { i, rev: this.sort.i === i ? !this.sort.rev : false }; this.render(); });
     this.render();
   },
   render() {
@@ -343,23 +358,25 @@ const Bench = {
     const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
     const cols = BENCH_COLS[this.exp];
     const lb = x.leaderboard;
-    // rows: leaderboard order, or best first by the first column when there is no leaderboard
-    const [, , , ca0, me0, , hi0] = cols[0];
+    const rk = !lb && !!x.apps;   // lab table: rank badge, one-line version · MTU · iPhone note, sortable headers
+    // rows: leaderboard order, or best first by the sort column (the first one unless a header was clicked)
+    const si = rk ? this.sort.i : 0, rev = rk && this.sort.rev;
+    const [, , , ca0, me0, , hi0] = cols[si];
     const m0 = (a) => (stats(ca0, me0)[a] || { median: hi0 ? -Infinity : Infinity }).median;
-    const ref = x.reference || [];   // reference rows: below the ranking, outside the colours
-    const apps = lb ? Object.keys(lb) : Object.keys(x.versions).filter((a) => !ref.includes(a)).sort((p, q) => hi0 ? m0(q) - m0(p) : m0(p) - m0(q));
-    const badges = (a) => { const i = (x.apps || {})[a]; return i ? `${i.mtu ? `<span class="chip${i.mtu <= 1500 ? " c-legacy" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? `<span class="chip" title="Also available on iPhone">iPhone</span>` : ""}` : ""; };
+    const apps = lb ? Object.keys(lb) : Object.keys(x.versions).sort((p, q) => (hi0 ? m0(q) - m0(p) : m0(p) - m0(q)) * (rev ? -1 : 1));
+    const meta = (a) => { const i = (x.apps || {})[a] || {};
+      return `${i.mtu ? ` · <span class="${i.mtu <= 1500 ? "m-low" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? ` · <span title="Also available on iPhone">iPhone</span>` : ""}`; };
 
-    const cell = ([, , , ca, me, sc, hi], a) => {
-      const s = Object.fromEntries(Object.entries(stats(ca, me)).filter(([k]) => !ref.includes(k))), v = stats(ca, me)[a];
+    const cell = ([, , , ca, me, sc, hi, also], a) => {
+      const s = stats(ca, me), v = s[a];
       if (!v) return `<td class="num na" title="No result">–</td>`;
-      if (ref.includes(a)) return `<td class="num" title="${esc(`${name(a)} (reference): median ${fmtNum(v.median * sc)}`)}">${fmtNum(v.median * sc)}</td>`;
       const beats = hi ? (d) => s[d].min > v.max : (d) => s[d].max < v.min;
       const best = !Object.keys(s).some((d) => d !== a && beats(d));
       const meds = Object.values(s).map((y) => y.median);
       const worst = Object.keys(s).length > 2 && v.median === (hi ? Math.min(...meds) : Math.max(...meds));
-      const tip = `${name(a)}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} over ${v.n} rounds` : ""}`;
-      return `<td class="num${best ? " best" : worst ? " worst" : ""}" title="${esc(tip)}">${fmtNum(v.median * sc)}</td>`;
+      const up = also && stats(also, me)[a];
+      const tip = `${name(a)}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} over ${v.n} rounds` : ""}${up ? `; upload ${fmtNum(up.median * sc)}` : ""}`;
+      return `<td class="num${best ? " best" : worst ? " worst" : ""}" title="${esc(tip)}">${me === "score" ? `<b>${fmtNum(v.median * sc)}</b>` : fmtNum(v.median * sc)}</td>`;
     };
     // later single-app runs: shown under the app's row, outside the stats and the colours
     const rechecks = x.rechecks || [];
@@ -369,16 +386,16 @@ const Bench = {
           return v == null ? `<td class="num na" title="Not measured">–</td>` : `<td class="num">${fmtNum(v * sc)}</td>`; }).join("")}</tr>`).join("");
     const groups = [];
     cols.forEach(([g]) => { const last = groups[groups.length - 1]; if (last && last[0] === g) last[1]++; else groups.push([g, 1]); });
-    const lead = lb ? 3 : 1;
-    const table = `<div class="table-wrap"><table class="bn-table">
+    const lead = lb ? 3 : rk ? 2 : 1;
+    const table = `<div class="table-wrap"><table class="bn-table${rk ? " bn-compact" : ""}">
       <thead><tr><th colspan="${lead}"></th>${groups.map(([g, n]) => `<th class="grp" colspan="${n}">${esc(g)}</th>`).join("")}</tr>
-        <tr>${lb ? `<th class="num">#</th>` : ""}<th class="who">App</th>${lb ? `<th class="num">Score</th>` : ""}${cols.map(([, l, u, , , , hi]) => `<th class="num">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></th>`).join("")}</tr></thead>
-      <tbody>${apps.map((a, i) => `<tr${lb && i === 0 ? ' class="lead"' : ""}>${lb ? `<td class="num">${i + 1}</td>` : ""}
-        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}</span><span class="bn-badges">${badges(a)}</span></td>
+        <tr>${lb || rk ? `<th class="num">#</th>` : ""}<th class="who">App</th>${lb ? `<th class="num">Score</th>` : ""}${cols.map(([, l, u, , , , hi], j) => rk
+          ? `<th class="num" aria-sort="${j === si ? ((hi !== rev) ? "descending" : "ascending") : "none"}"><button type="button" class="bn-sort${j === si ? " on" : ""}" data-i="${j}" title="Sort by ${esc(l)}">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></button></th>`
+          : `<th class="num">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></th>`).join("")}</tr></thead>
+      <tbody>${apps.map((a, i) => `<tr${lb && i === 0 ? ' class="lead"' : ""}>${lb ? `<td class="num">${i + 1}</td>` : rk ? `<td class="num"><span class="rk ${i === 0 ? "r1" : i === apps.length - 1 ? "rlast" : "rmid"}">${i + 1}</span></td>` : ""}
+        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}${meta(a)}</span></td>
         ${lb ? `<td class="num" title="Tie-aware score ${lb[a].score_tie.toFixed(2)}"><b>${lb[a].score.toFixed(2)}</b></td>` : ""}
-        ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}
-        ${ref.filter((a) => x.versions[a]).map((a) => `<tr class="bn-ref">${lb ? "<td></td>" : ""}<td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))} · reference, not ranked</span><span class="bn-badges">${badges(a)}</span></td>
-        ${lb ? "<td></td>" : ""}${cols.map((c) => cell(c, a)).join("")}</tr>`).join("")}</tbody></table></div>`;
+        ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}</tbody></table></div>`;
 
     const cc = this.data.chain_cost && this.data.chain_cost["dl_100m.tunnel_energy_per_gb"];
     const chain = this.exp === "A" && cc ? `<div class="bn-block"><h3>What the chain costs</h3>
@@ -391,11 +408,13 @@ const Bench = {
           (24 s vs 39 s on the chain), but each CPU-second costs about 3× the energy. On the chain, 2.3 measured 2.2 J/GB in a one-round check,
           so most of its jump comes from the update.</p></div>` : "";
 
-    const appCards = apps.map((c) => {
-      const a = APPS.find((y) => y.name === BENCH_APP_NOTES[c]);
-      return a ? `<div class="app"><h3>${esc(name(c))}<span>${esc(ver(c))}</span></h3>
-        <dl class="kv">${a.kv.filter(([k]) => /Core|IP stack|License/.test(k)).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
-        <p>${esc(a.note)}</p>${srcLinks(a.src)}</div>` : "";
+    const appCards = BENCH_CORES.map(([core, what, list]) => {
+      const rows = apps.filter((c) => list[c]).map((c) => {
+        const [detail, lic, stack] = list[c];
+        return `<li><b>${esc(name(c))}</b> <span class="v">${esc(ver(c))}</span>${detail ? `<span>${esc(detail)}</span>` : ""}
+          ${stack ? `<span>IP stack: ${esc(stack)}</span>` : ""}${lic ? `<span class="lic">${esc(lic)}</span>` : ""}</li>`;
+      }).join("");
+      return rows ? `<div class="core"><h4>${esc(core)} <span>${esc(what)}</span></h4><ul>${rows}</ul></div>` : "";
     }).join("");
 
     $("#bn-body").innerHTML = `
@@ -411,11 +430,12 @@ const Bench = {
           App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p>
         ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
         ${this.exp === "A" ? `<p class="bn-callout"><b>${esc(BENCH_IPHONE_NOTE.split(": ")[0])}</b>${esc(BENCH_IPHONE_NOTE.charAt(BENCH_IPHONE_NOTE.indexOf(": ") + 2).toUpperCase() + BENCH_IPHONE_NOTE.slice(BENCH_IPHONE_NOTE.indexOf(": ") + 3))}</p>` : ""}</div>
-      ${["S", "E"].includes(this.exp) ? `<div class="bn-block"><h3>How we tested</h3><p class="note">${esc(BENCH_LAB_METHOD)}</p></div>` : ""}
+      ${this.exp === "L" ? `<div class="bn-block"><h3>How we tested</h3><p class="note">${esc(BENCH_LAB_METHOD)}</p></div>` : ""}
       ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
-        <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
-        <div class="apps">${appCards}</div></div>` : ""}
+        <p>Grouped by the core that moves the traffic, read from the code inside each installed Mac app. License from the project's
+          public code page; no license shown means closed source or not sure. IP stack only where we know it.</p>
+        <div class="cores">${appCards}</div></div>` : ""}
       <p class="note bn-foot">Footnote: this is not a professional lab test, just a personal, nerdy-interest one: one Mac on Wi-Fi, a few days,
         a handful of rounds. On a phone over cellular the results may differ.</p>`;
   }
