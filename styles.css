@@ -261,6 +261,9 @@ tr.lead td { font-weight: 500; }
 .bn-callout b { display: block; margin-bottom: 2px; color: var(--ink); font-weight: 600; }
 #bn-body .bn-table thead .who { background: color-mix(in srgb, var(--grid) 55%, var(--panel)); }
 .bn-table td.who .note { display: block; font-size: 11.5px; }
+.bn-table td.who .bn-badges { display: flex; gap: 4px; margin-top: 4px; }
+.bn-table td.who .bn-badges .chip { font-size: 10.5px; padding: 3px 6px; }
+.bn-table tr.bn-ref td { border-top: 1px dashed var(--grid); color: var(--ink-2); }
 .key { padding: 1px 6px; border-radius: 4px; color: var(--ink); }
 .key.best { background: color-mix(in srgb, var(--ok) 24%, transparent); font-weight: 600; }
 .key.worst { background: color-mix(in srgb, var(--blk) 19%, transparent); }

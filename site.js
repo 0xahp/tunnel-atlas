@@ -281,8 +281,10 @@ const Picks = {
 };
 
 /* ==================== Client-app benchmark ====================
-   Reads bench/experiments.json. Three setups, never pooled. */
-const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole" };
+   Reads bench/experiments.json. Speed, efficiency (Stage 1 lab) and chain + rules, never pooled. */
+const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
+  throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
+  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI" };
 const BENCH_APP_NOTES = { anywhere: "Anywhere", sfm: "sing-box for Apple", karing: "Karing", shadowrocket: "Shadowrocket", egern: "Egern" };
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
 // keep in sync with make-static.py and proxy-bench/results/RESULTS.md
@@ -290,21 +292,34 @@ const BENCH_IPHONE_NOTE = "iPhone check (16 Oct): on an iPhone 11 Pro (iOS 27, s
   + "Anywhere 2.4 and Egern tied: 0.93 W vs 0.93–0.95 W at a steady 50 Mbit/s download (about 148–152 J per GB for the whole phone), "
   + "the same single-connection speed (70–75 Mbit/s) and page first-byte times within run-to-run noise. Idle draw was within noise of no VPN for both. "
   + "The Mac's ~4× gap in app energy per GB is in the app's own small share of power and doesn't show at the whole-device level.";
+// keep in sync with make-static.py
+const BENCH_LAB_METHOD = "One MacBook Air M1 (macOS 27.0.1), on battery, screen off, no app windows open. Each app ran in its TUN (whole-system VPN) mode "
+  + "with the same Shadowsocks 2022 profile (2022-blake3-aes-128-gcm), pointed at a sing-box server on the same Mac; iperf3 3.22 sent traffic through the "
+  + "app's tunnel to that server and back. No internet and no remote server are involved, so the numbers show each app's own overhead. A script switched "
+  + "the apps on and off one at a time, in two rounds (the second in reverse order); each number is the median of the two. Speed: 5 s per test after a "
+  + "2 s warm-up, over one and over four parallel connections. Efficiency: a steady 200 Mbit/s download for 20 s; energy is macOS's own estimate for "
+  + "the app's tunnel process, CPU is that process's CPU time, both per GB moved, and memory is its footprint at the end of the test. Every test checked "
+  + "that its bytes went through the app's tunnel; a test with any keyboard or trackpad input was thrown out and repeated. MTU is the tunnel's packet "
+  + "size as macOS reported it: we asked for 4000 where we could; apps that stay at 1500 handle about 2.7× more packets per GB "
+  + "(Happ's MTU setting has no effect on the Mac tunnel). Karing used its mixed stack; its four-connection download is from one round. Versions as "
+  + "installed on 20 Oct 2026. The sing-box command line (no app, no GUI) is shown below the ranking as a reference for the core's own cost.";
 const BENCH_SETUPS = {
-  A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."],
-  B: ["Basic", "The simplest setup: one proxy, no rules, everything through the tunnel."],
-  C: ["Top speed", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and what it costs at a steady 500 Mbit/s. One round only, so a first look rather than a ranking."]
+  S: ["Speed", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, power aside. Upload and download, over one connection and over four; Average is the mean of the four."],
+  E: ["Efficiency", "The same lab, with every app moving the same steady 200 Mbit/s download: how much energy, CPU time and memory its tunnel needs for it."],
+  A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better]
 const IDLE_COLS = (c) => [["Idle", "Wakeups", "per s", c, "tunnel_wakeups_per_s", 1], ["Idle", "Avg power", "µW", c, "tunnel_power_w", 1e6]];
 const LOAD_COLS = (g, c) => [[g, "Power", "mW", c, "tunnel_power_w", 1e3], [g, "Energy", "J per GB", c, "tunnel_energy_per_gb", 1], [g, "CPU", "%", c, "tunnel_cpu_pct", 1]];
 const BENCH_COLS = {
   A: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Full speed", "Speed", "Mbit/s", "dl_max", "mbps", 1, true], ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],
-  B: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],
-  C: [["Top speed", "Upload", "Gbit/s", "tcp_up_1", "gbps", 1, true], ...LOAD_COLS("At 500 Mbit/s", "tcp_up_500m"), ...IDLE_COLS("idle30")]
+  S: [["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["One connection", "Upload", "Gbit/s", "up_1", "gbps", 1, true], ["One connection", "Download", "Gbit/s", "down_1", "gbps", 1, true],
+    ["Four connections", "Upload", "Gbit/s", "up_4", "gbps", 1, true], ["Four connections", "Download", "Gbit/s", "down_4", "gbps", 1, true]],
+  E: [["At 200 Mbit/s download", "Energy", "J per GB", "down_200", "tunnel_energy_per_gb", 1], ["At 200 Mbit/s download", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1],
+    ["At 200 Mbit/s download", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]]
 };
 const Bench = {
-  exp: "A",
+  exp: "S",
   async init() {
     try {
       const r = await fetch("bench/experiments.json", { cache: "no-store" });
@@ -328,13 +343,17 @@ const Bench = {
     const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
     const cols = BENCH_COLS[this.exp];
     const lb = x.leaderboard;
-    // rows: leaderboard order, or fastest first when there is no leaderboard
-    const [, , , ca0, me0] = cols[0];
-    const apps = lb ? Object.keys(lb) : Object.keys(x.versions).sort((p, q) => (stats(ca0, me0)[q] || { median: -1 }).median - (stats(ca0, me0)[p] || { median: -1 }).median);
+    // rows: leaderboard order, or best first by the first column when there is no leaderboard
+    const [, , , ca0, me0, , hi0] = cols[0];
+    const m0 = (a) => (stats(ca0, me0)[a] || { median: hi0 ? -Infinity : Infinity }).median;
+    const ref = x.reference || [];   // reference rows: below the ranking, outside the colours
+    const apps = lb ? Object.keys(lb) : Object.keys(x.versions).filter((a) => !ref.includes(a)).sort((p, q) => hi0 ? m0(q) - m0(p) : m0(p) - m0(q));
+    const badges = (a) => { const i = (x.apps || {})[a]; return i ? `${i.mtu ? `<span class="chip${i.mtu <= 1500 ? " c-legacy" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? `<span class="chip" title="Also available on iPhone">iPhone</span>` : ""}` : ""; };
 
     const cell = ([, , , ca, me, sc, hi], a) => {
-      const s = stats(ca, me), v = s[a];
+      const s = Object.fromEntries(Object.entries(stats(ca, me)).filter(([k]) => !ref.includes(k))), v = stats(ca, me)[a];
       if (!v) return `<td class="num na" title="No result">–</td>`;
+      if (ref.includes(a)) return `<td class="num" title="${esc(`${name(a)} (reference): median ${fmtNum(v.median * sc)}`)}">${fmtNum(v.median * sc)}</td>`;
       const beats = hi ? (d) => s[d].min > v.max : (d) => s[d].max < v.min;
       const best = !Object.keys(s).some((d) => d !== a && beats(d));
       const meds = Object.values(s).map((y) => y.median);
@@ -355,9 +374,11 @@ const Bench = {
       <thead><tr><th colspan="${lead}"></th>${groups.map(([g, n]) => `<th class="grp" colspan="${n}">${esc(g)}</th>`).join("")}</tr>
         <tr>${lb ? `<th class="num">#</th>` : ""}<th class="who">App</th>${lb ? `<th class="num">Score</th>` : ""}${cols.map(([, l, u, , , , hi]) => `<th class="num">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></th>`).join("")}</tr></thead>
       <tbody>${apps.map((a, i) => `<tr${lb && i === 0 ? ' class="lead"' : ""}>${lb ? `<td class="num">${i + 1}</td>` : ""}
-        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}</span></td>
+        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}</span><span class="bn-badges">${badges(a)}</span></td>
         ${lb ? `<td class="num" title="Tie-aware score ${lb[a].score_tie.toFixed(2)}"><b>${lb[a].score.toFixed(2)}</b></td>` : ""}
-        ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}</tbody></table></div>`;
+        ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}
+        ${ref.filter((a) => x.versions[a]).map((a) => `<tr class="bn-ref">${lb ? "<td></td>" : ""}<td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))} · reference, not ranked</span><span class="bn-badges">${badges(a)}</span></td>
+        ${lb ? "<td></td>" : ""}${cols.map((c) => cell(c, a)).join("")}</tr>`).join("")}</tbody></table></div>`;
 
     const cc = this.data.chain_cost && this.data.chain_cost["dl_100m.tunnel_energy_per_gb"];
     const chain = this.exp === "A" && cc ? `<div class="bn-block"><h3>What the chain costs</h3>
@@ -390,6 +411,7 @@ const Bench = {
           App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p>
         ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
         ${this.exp === "A" ? `<p class="bn-callout"><b>${esc(BENCH_IPHONE_NOTE.split(": ")[0])}</b>${esc(BENCH_IPHONE_NOTE.charAt(BENCH_IPHONE_NOTE.indexOf(": ") + 2).toUpperCase() + BENCH_IPHONE_NOTE.slice(BENCH_IPHONE_NOTE.indexOf(": ") + 3))}</p>` : ""}</div>
+      ${["S", "E"].includes(this.exp) ? `<div class="bn-block"><h3>How we tested</h3><p class="note">${esc(BENCH_LAB_METHOD)}</p></div>` : ""}
       ${chain}
       ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>From the apps' published code and App Store notes. On iPhone the tunnel runs in a Network Extension with a ~50 MiB memory limit.</p>
