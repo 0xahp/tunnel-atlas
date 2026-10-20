@@ -366,3 +366,16 @@ tr.lead td { font-weight: 500; }
 .core li b { font-weight: 600; color: var(--ink); }
 .core li .v, .core li span { color: var(--muted); font-size: 12px; }
 .core li .lic { margin-left: auto; color: var(--ink-2); }
+
+/* lab chart: speed against energy per GB */
+.bn-chart-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 12px; background: var(--panel); }
+.bn-chart { display: block; width: 100%; min-width: 560px; height: auto; }
+.bn-chart .gr { stroke: var(--grid); stroke-width: 1; }
+.bn-chart .ax { fill: var(--muted); font: 11px var(--f-data); }
+.bn-chart .ax-t { fill: var(--muted); font: 12px var(--f-body); }
+.bn-chart .iso { fill: none; stroke: var(--unk); stroke-width: 1; opacity: .7; }
+.bn-chart .iso-t { fill: var(--muted); font: 10.5px var(--f-body); }
+.bn-chart .dot { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
+.bn-chart .hit { fill: transparent; }
+.bn-chart .pt:hover .dot { r: 7; }
+.bn-chart .lbl { fill: var(--ink-2); font: 500 11.5px var(--f-body); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }

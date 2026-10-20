@@ -422,6 +422,11 @@ const Bench = {
         <div class="bn-meta"><span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>
           <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
           <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div></div>
+      ${this.exp === "L" ? `<div class="bn-block"><h3>Speed against efficiency</h3>
+        ${benchScatter(Object.fromEntries(Object.entries(stats("speed", "gbps_avg")).map(([a, v]) => [a, v.median])),
+          Object.fromEntries(Object.entries(stats("down_200", "tunnel_energy_per_gb")).map(([a, v]) => [a, v.median])), name)}
+        <p class="note">Top right is best: fast and light on the battery. The gray lines join points with the same score, so an app's place in the
+          ranking is how far up-right of them it sits. Hover a dot for its numbers.</p></div>` : ""}
       <div class="bn-block"><h3>${lb ? "Leaderboard and every measure" : "Every measure"}</h3>
         ${table}
         <p>Each number is the app's median over all rounds; hover it for the range. ↓ lower is better, ↑ higher is better.
@@ -440,6 +445,43 @@ const Bench = {
         a handful of rounds. On a phone over cellular the results may differ.</p>`;
   }
 };
+// lab chart: speed (up) against energy per GB (right = less), both log scales. The score's equal-score lines are straight here.
+function benchScatter(sp, en, name) {
+  const apps = Object.keys(sp).filter((a) => en[a]), W = 680, H = 400, L = 52, R = 16, T = 14, B = 46;
+  const lg = Math.log10, X = (e) => L + (lg(30) - lg(e)) / (lg(30) - lg(0.2)) * (W - L - R), Y = (s) => T + (lg(30) - lg(s)) / (lg(30) - lg(0.2)) * (H - T - B);
+  const spMax = Math.max(...apps.map((a) => sp[a])), enMin = Math.min(...apps.map((a) => en[a]));
+  const score = (a) => 100 * (sp[a] / spMax) ** 0.3 * (enMin / en[a]) ** 0.7;
+  const ticks = [0.2, 0.5, 1, 2, 5, 10, 20];
+  let g = ticks.map((v) => `<line class="gr" x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${H - B}"/><text class="ax" x="${X(v)}" y="${H - B + 16}" text-anchor="middle">${v}</text>`).join("")
+    + ticks.map((v) => `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${L - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("");
+  // equal-score lines: speed = spMax * (S/100 / (enMin/e)^0.7)^(1/0.3)
+  [10, 25, 50, 75].forEach((S) => {
+    const s = (e) => spMax * ((S / 100) / (enMin / e) ** 0.7) ** (1 / 0.3), pts = [];
+    for (let k = 0; k <= 60; k++) { const e = 10 ** (lg(0.2) + k / 60 * (lg(30) - lg(0.2))), v = s(e); if (v >= 0.2 && v <= 30) pts.push([X(e), Y(v)]); }
+    if (pts.length < 2) return;
+    const [lx, ly] = pts[0][1] < pts[pts.length - 1][1] ? pts[0] : pts[pts.length - 1];
+    g += `<polyline class="iso" points="${pts.map((q) => q.join(",")).join(" ")}"/><text class="iso-t" x="${lx - 4}" y="${ly + 12}" text-anchor="end">score ${S}</text>`;
+  });
+  // labels: best score first; try right, left, above, below, then the corners; skip if nothing fits (the tooltip and table still name it)
+  const boxes = apps.map((a) => [X(en[a]) - 7, Y(sp[a]) - 7, 14, 14]);
+  const hit = (b) => b[0] < L || b[0] + b[2] > W - R || b[1] < T || b[1] + b[3] > H - B
+    || boxes.some((c) => b[0] < c[0] + c[2] && c[0] < b[0] + b[2] && b[1] < c[1] + c[3] && c[1] < b[1] + b[3]);
+  let dots = "", labels = "";
+  apps.sort((p, q) => score(q) - score(p)).forEach((a) => {
+    const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.4 + 2, tip = `${name(a)}: ${fmtNum(sp[a])} Gbit/s average, ${fmtNum(en[a])} J per GB, score ${fmtNum(score(a))}`;
+    dots += `<g class="pt"><title>${esc(tip)}</title><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
+    const at = [[cx + 9, cy - 7, "start"], [cx - 9 - w, cy - 7, "end"], [cx - w / 2, cy - 22, "middle"], [cx - w / 2, cy + 8, "middle"],
+      [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"]]
+      .map(([bx, by, an]) => [[bx, by, w, 14], an]).find(([b]) => !hit(b));
+    if (!at) return;
+    const [[bx, by], an] = at; boxes.push(at[0]);
+    labels += `<text class="lbl" x="${an === "start" ? bx : an === "end" ? bx + w : bx + w / 2}" y="${by + 11}" text-anchor="${an}">${esc(name(a))}</text>`;
+  });
+  return `<div class="bn-chart-wrap"><svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average speed against energy per GB for each app; the table below has every value.">
+    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">Energy at 200 Mbit/s, J per GB (log) · less →</text>
+    <text class="ax-t" transform="translate(13 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Average speed, Gbit/s (log) · faster ↑</text>
+    ${dots}${labels}</svg></div>`;
+}
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
 
 showTab(location.hash.slice(1) || "bench");
