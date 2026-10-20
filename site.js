@@ -284,7 +284,7 @@ const Picks = {
    Reads bench/experiments.json. Speed, efficiency (Stage 1 lab) and chain + rules, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
-  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI" };
+  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify" };
 // core read from the Go modules inside each installed Mac app (20 Oct); license from the project's GitHub page; blank = not sure
 const BENCH_CORES = [
   ["sing-box", "Go; the SagerNet core", { sfm: ["libbox (gomobile)", "GPL-3.0"], cli: ["the core itself", "GPL-3.0 + name clause"],
@@ -295,7 +295,7 @@ const BENCH_CORES = [
   ["Xray", "Go; the XTLS core", { onexray: ["libXray", "GPL-3.0"], happ: ["libXray"], v2box: [""], incy: [""] }],
   ["Own core", "no sing-box, Xray or mihomo inside", { anywhere: ["Swift", "GPL-3.0", "AnywhereIP (own, Swift)"], surge: [""], shadowrocket: [""],
     egern: ["", "", "own user-space stack (vendor's note, 2.15)"] }]];
-const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1" };
+const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 11 Pro" };
 // keep in sync with make-static.py and proxy-bench/results/RESULTS.md
 const BENCH_IPHONE_NOTE = "iPhone check (16 Oct): on an iPhone 11 Pro (iOS 27, same chain + rules, 2 rounds, whole-phone power from the battery gauge over USB), "
   + "Anywhere 2.4 and Egern tied: 0.93 W vs 0.93–0.95 W at a steady 50 Mbit/s download (about 148–152 J per GB for the whole phone), "
@@ -315,8 +315,17 @@ const BENCH_LAB_METHOD = "One MacBook Air M1 (macOS 27.0.1), on battery, screen 
   + "Score (out of 100) = 30% speed + 70% efficiency, each as a ratio to the best app: 100 × (average speed ÷ best average speed)^0.3 × "
   + "(best energy per GB ÷ energy per GB)^0.7. Efficiency weighs more because every app near the top is already far faster than any real internet "
   + "connection. Click a column header to sort by that column instead.";
+// keep in sync with make-static.py
+const BENCH_IPHONE_METHOD = "One iPhone 11 Pro (iOS 27.0.1) on Wi-Fi, plugged into a Mac by USB, screen on at a fixed brightness. Each app ran its VPN with the same "
+  + "Shadowsocks 2022 profile (2022-blake3-aes-128-gcm), pointed at a sing-box server on the Mac; a test page in Safari, loaded through the app's tunnel, "
+  + "downloaded a steady 100 Mbit/s for 90 s. Power is the whole phone's draw from its battery gauge (charging excluded), averaged after the first 15 s. "
+  + "\"Above no VPN\" subtracts the same test with no VPN, run at the start (1.33 W) and the end (1.44 W): the phone drew a little more as it charged "
+  + "and warmed up, so each app is compared with a straight line between the two. Differences under about 0.1 W are within that drift. "
+  + "One round, apps one after another; Egern ran twice (first and last) to check the correction. Happ could not hold 100 Mbit/s (87). "
+  + "The Wi-Fi sets the top speed here (about 230 Mbit/s), so speed isn't ranked. Versions as installed on 20 Oct 2026.";
 const BENCH_SETUPS = {
   L: ["Lab: speed + efficiency", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and how much energy, CPU time and memory its tunnel needs for a steady 200 Mbit/s download. Ranked by a score of 30% speed and 70% efficiency; click any column header to sort by it."],
+  I: ["On iPhone", "The same lab idea on an iPhone: how much more power the whole phone draws while each app's VPN carries a steady 100 Mbit/s download. Lower is better. Egern, Shadowrocket and Anywhere are tied: their gaps are smaller than the 0.1 W the phone drifted during the test (below zero = the same as no VPN)."],
   A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
@@ -328,7 +337,8 @@ const BENCH_COLS = {
     ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
     ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
     ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "tunnel_energy_per_gb", 1], ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1],
-    ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]]
+    ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]],
+  I: [["At 100 Mbit/s", "Above no VPN", "mW", "down_100", "phone_extra_w", 1e3], ["At 100 Mbit/s", "Whole phone", "W", "down_100", "phone_w", 1]]
 };
 const Bench = {
   exp: "L",
@@ -419,7 +429,7 @@ const Bench = {
 
     $("#bn-body").innerHTML = `
       <div class="bn-block"><p class="bn-setup">${esc(BENCH_SETUPS[this.exp][1])}</p>
-        <div class="bn-meta"><span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>
+        <div class="bn-meta">${x.device ? `<span><b>${esc(BENCH_MACS[x.device] || x.device)}</b>, on the USB cable</span>` : `<span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>`}
           <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
           <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div></div>
       ${this.exp === "L" ? `<div class="bn-block"><h3>Speed against efficiency</h3>
@@ -432,12 +442,12 @@ const Bench = {
         <p>Each number is the app's median over all rounds; hover it for the range. ↓ lower is better, ↑ higher is better.
           <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
           ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
-          App power and energy are macOS's own per-process estimates for the tunnel process.${x.note ? ` ${esc(x.note)}` : ""}</p>
+          ${this.exp === "I" ? "Power is the whole phone's, from its battery gauge." : "App power and energy are macOS's own per-process estimates for the tunnel process."}${x.note ? ` ${esc(x.note)}` : ""}</p>
         ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
         ${this.exp === "A" ? `<p class="bn-callout"><b>${esc(BENCH_IPHONE_NOTE.split(": ")[0])}</b>${esc(BENCH_IPHONE_NOTE.charAt(BENCH_IPHONE_NOTE.indexOf(": ") + 2).toUpperCase() + BENCH_IPHONE_NOTE.slice(BENCH_IPHONE_NOTE.indexOf(": ") + 3))}</p>` : ""}</div>
-      ${this.exp === "L" ? `<div class="bn-block"><h3>How we tested</h3><p class="note">${esc(BENCH_LAB_METHOD)}</p></div>` : ""}
+      ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>How we tested</h3><p class="note">${esc(this.exp === "I" ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD)}</p></div>` : ""}
       ${chain}
-      ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
+      ${appCards && this.exp !== "I" ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>Grouped by the core that moves the traffic, read from the code inside each installed Mac app. License from the project's
           public code page; no license shown means closed source or not sure. IP stack only where we know it.</p>
         <div class="cores">${appCards}</div></div>` : ""}
