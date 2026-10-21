@@ -327,8 +327,8 @@ const BENCH_IPHONE_METHOD = [
   + "Idle power differences are mostly within noise (±0.07 W); wakeups show how often the tunnel woke the processor. Same score formula as the Mac lab.",
   "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds."];
 const BENCH_SETUPS = {
-  L: ["Lab: speed + efficiency", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."],
-  I: ["Lab: on iPhone", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."]
+  L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."],
+  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
 const BENCH_COLS = {
@@ -357,7 +357,7 @@ const Bench = {
         <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
       return;
     }
-    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}</button>`).join("");
+    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)} · ${Object.keys(this.data.experiments.find((e) => e.id === id).versions).length} apps</button>`).join("");
     $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = { i: 0, rev: false }; this.render(); } });
     $("#bn-body").addEventListener("click", (e) => { const b = e.target.closest(".bn-sort"); if (!b) return;
       const i = +b.dataset.i; this.sort = { i, rev: this.sort.i === i ? !this.sort.rev : false }; this.render(); });
