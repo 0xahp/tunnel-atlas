@@ -38,6 +38,7 @@ function showTab(id, focus) {
   if (focus) $("#tab-" + id).focus();
   if (!rendered[id]) { rendered[id] = true; ({ timeline: Timeline, setup: Picks, bench: Bench })[id].init(); }
   if (id === "timeline") Timeline.layout();
+  if (id === "bench" && Bench.x) Bench.chart(); // redraw at the current width
   if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
 }
 for (const t of TABS) $("#tab-" + t).addEventListener("click", () => { showTab(t); window.scrollTo(0, 0); });
@@ -268,11 +269,23 @@ const Picks = {
       <div style="grid-row:3"></div>${r.hops.map((h) => `<div class="hop"><span class="hop-title">${esc(h.title)}</span><span class="hop-sub">${esc(h.sub)}</span></div>`).join("")}`;
     for (const [key, lbl] of SEEN_KEYS) grid += `<div class="seen-lbl">${esc(lbl)}</div>${r.hops.map((h) => cell(h.seen[key])).join("")}`;
     grid += `<div class="seen-lbl">What happens</div>${r.hops.map((h) => `<div class="hop-desc">${esc(h.desc)}</div>`).join("")}`;
+    // phones: the same path top to bottom; the wire below a hop glows where it is encrypted
+    const vflow = r.hops.map((h, k) => {
+      const tun = k < n - 1 && r.enc.some(([a, b]) => a <= k && k < b);
+      const legs = k < n - 1 ? [...r.enc.filter(([a]) => a === k).map(([, , l]) => `<span class="vtun">${esc(l)}</span>`), r.legs && r.legs[k] ? `<span>${esc(r.legs[k])}</span>` : ""].join("") : "";
+      const seen = SEEN_KEYS.map(([key, lbl]) => { const v = h.seen[key], [s, note] = Array.isArray(v) ? v : [v, ""];
+        return `<li><span class="dot ${s}" title="${SEEN_MARK[s]}"></span>${esc(lbl)}${note ? ` <em>${esc(note)}</em>` : ""}</li>`; }).join("");
+      return `<li class="vhop ${h.zone}${tun ? " tun" : ""}${k === n - 1 ? " last" : ""}"><span class="vnode" aria-hidden="true"></span><div class="vbody">
+        ${k === 0 || r.hops[k - 1].zone !== h.zone ? `<span class="vzone">${ZN[h.zone]}</span>` : ""}
+        <span class="vtitle"><span class="hop-title">${esc(h.title)}</span><span class="hop-sub">${esc(h.sub)}</span></span>
+        <ul class="vseen" aria-label="What this hop sees">${seen}</ul><p class="hop-desc">${esc(h.desc)}</p>${legs ? `<p class="vleg">${legs}</p>` : ""}</div></li>`;
+    }).join("");
     $("#pk-flow").innerHTML = `
       <div class="flow-head"><h2>${esc(r.name)}</h2>
         <div class="flow-stats"><span>Censor sees <b>${esc(r.sees)}</b></span><span>Servers <b>${esc(r.extra)}</b></span><span>Delay <b>${esc(r.latency)}</b></span></div></div>
-      <div class="flow-scroll"><div class="flow-grid" style="--hops:${n}">${grid}</div></div>
-      <div class="flow-key"><span><i class="dot y"></i>sees it</span><span><i class="dot p"></i>partly</span><span><i class="dot n"></i>can't see it</span><span>Blue bar: encrypted span</span></div>
+      <div class="flow-scroll screen"><div class="flow-grid" style="--hops:${n}">${grid}</div></div>
+      <ol class="vflow screen">${vflow}</ol>
+      <div class="flow-key"><span><i class="dot y"></i>sees it</span><span><i class="dot p"></i>partly</span><span><i class="dot n"></i>can't see it</span><span>Gold bar: encrypted span</span></div>
       <div class="flow-pc"><div><span class="ro-label">Good</span><ul>${r.pros.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
         <div><span class="ro-label">Watch out</span><ul>${r.cons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
         <div><span class="ro-label">Used by</span><ul>${r.used.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div></div>
@@ -327,8 +340,8 @@ const BENCH_IPHONE_METHOD = [
   + "Idle power differences are mostly within noise (±0.07 W); wakeups show how often the tunnel woke the processor. Same score formula as the Mac lab.",
   "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds."];
 const BENCH_SETUPS = {
-  L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."],
-  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."]
+  L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); pick a measure to rank by it."],
+  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); pick a measure to rank by it."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
 const BENCH_COLS = {
@@ -344,9 +357,12 @@ const BENCH_COLS = {
     ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1], ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1],
     ["Idle", "Extra power", "mW", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
 };
+const benchName = (a) => BENCH_NAMES[a] || a;
+// measure keys over the ranking
+const benchKey = ([g, l]) => l === "Average" ? "Speed" : g === "Speed" ? `Speed, ${l}` : g === "Idle" ? `Idle ${l.toLowerCase()}` : l;
 const Bench = {
   exp: "L",
-  sort: { i: 0, rev: false },   // lab table: column to sort by (best first), rev = worst first
+  sort: 0,   // measure to rank by, best first
   async init() {
     try {
       const r = await fetch("bench/experiments.json", { cache: "no-store" });
@@ -357,98 +373,135 @@ const Bench = {
         <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
       return;
     }
-    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)} · ${Object.keys(this.data.experiments.find((e) => e.id === id).versions).length} apps</button>`).join("");
-    $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = { i: 0, rev: false }; this.render(); } });
-    $("#bn-body").addEventListener("click", (e) => { const b = e.target.closest(".bn-sort"); if (!b) return;
-      const i = +b.dataset.i; this.sort = { i, rev: this.sort.i === i ? !this.sort.rev : false }; this.render(); });
+    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}, ${Object.keys(this.data.experiments.find((e) => e.id === id).versions).length} apps</button>`).join("");
+    $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = 0; this.render(); } });
+    const body = $("#bn-body");
+    body.addEventListener("click", (e) => {
+      const b = e.target.closest(".meas button");
+      if (b) { this.sort = +b.dataset.i; this.ranked(); return; }
+      const p = e.target.closest(".pt");
+      if (p) this.pick(p.dataset.app);
+    });
+    // the chart readout follows the pointer over dots and ranking rows, and keyboard focus
+    const follow = (e) => { const t = e.target.closest("[data-app]"); if (t && t.dataset.app !== this.cur) this.pick(t.dataset.app); };
+    body.addEventListener("mouseover", follow);
+    body.addEventListener("focusin", follow);
+    addEventListener("resize", () => { const c = $("#bn-chart"); if (c && !$("#bench").hidden && c.clientWidth !== this.cw) this.chart(); });
     this.render();
+  },
+  stats(ca, me) { return (this.x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {}; },
+  ver(a) { return this.x.versions[a].replace(/\s*\(.*\)$/, ""); },
+  meta(a) {
+    const i = (this.x.apps || {})[a] || {};
+    return `<span>${esc(this.ver(a))}</span>${i.mtu ? `<span class="${i.mtu <= 1500 ? "m-low" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? `<span title="Also available on iPhone">iPhone</span>` : ""}`;
+  },
+  // "best" = best or tied with the best (ranges overlap), "worst" = worst median
+  flag([, , , ca, me, , hi], a) {
+    const s = this.stats(ca, me), v = s[a];
+    if (!v) return "";
+    const beats = hi ? (d) => s[d].min > v.max : (d) => s[d].max < v.min;
+    if (!Object.keys(s).some((d) => d !== a && beats(d))) return "best";
+    const meds = Object.values(s).map((y) => y.median);
+    return Object.keys(s).length > 2 && v.median === (hi ? Math.min(...meds) : Math.max(...meds)) ? "worst" : "";
   },
   render() {
     $("#bn-exp").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.exp));
-    const x = this.data.experiments.find((e) => e.id === this.exp);
-    const name = (a) => BENCH_NAMES[a] || a;
-    const ver = (a) => x.versions[a].replace(/\s*\(.*\)$/, "");
-    const stats = (ca, me) => (x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {};
+    const x = this.x = this.data.experiments.find((e) => e.id === this.exp), I = this.exp === "I";
     const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
-    const cols = BENCH_COLS[this.exp];
-    const lb = x.leaderboard;
-    const rk = !lb && !!x.apps;   // lab table: rank badge, one-line version · MTU · iPhone note, sortable headers
-    // rows: leaderboard order, or best first by the sort column (the first one unless a header was clicked)
-    const si = rk ? this.sort.i : 0, rev = rk && this.sort.rev;
-    const [, , , ca0, me0, , hi0] = cols[si];
-    const m0 = (a) => (stats(ca0, me0)[a] || { median: hi0 ? -Infinity : Infinity }).median;
-    const apps = lb ? Object.keys(lb) : Object.keys(x.versions).sort((p, q) => (hi0 ? m0(q) - m0(p) : m0(p) - m0(q)) * (rev ? -1 : 1));
-    const meta = (a) => { const i = (x.apps || {})[a] || {};
-      return `${i.mtu ? ` · <span class="${i.mtu <= 1500 ? "m-low" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? ` · <span title="Also available on iPhone">iPhone</span>` : ""}`; };
-
-    const cell = ([, , , ca, me, sc, hi, also], a) => {
-      const s = stats(ca, me), v = s[a];
-      if (!v) return `<td class="num na" title="No result">–</td>`;
-      const beats = hi ? (d) => s[d].min > v.max : (d) => s[d].max < v.min;
-      const best = !Object.keys(s).some((d) => d !== a && beats(d));
-      const meds = Object.values(s).map((y) => y.median);
-      const worst = Object.keys(s).length > 2 && v.median === (hi ? Math.min(...meds) : Math.max(...meds));
-      const up = also && stats(also, me)[a];
-      const tip = `${name(a)}: median ${fmtNum(v.median * sc)}${v.n > 1 ? `, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} over ${v.n} rounds` : ""}${up ? `; upload ${fmtNum(up.median * sc)}` : ""}`;
-      return `<td class="num${best ? " best" : worst ? " worst" : ""}" title="${esc(tip)}">${me === "score" ? `<b>${fmtNum(v.median * sc)}</b>` : fmtNum(v.median * sc)}</td>`;
-    };
-    // later single-app runs: shown under the app's row, outside the stats and the colours
-    const rechecks = x.rechecks || [];
-    const recheckRows = (a) => rechecks.filter((r) => r.app === a).map((r) => `<tr>${lb ? "<td></td>" : ""}
-        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(r.version.replace(/\s*\(.*\)$/, ""))} · ${esc(date(r.session))}*</span></td>${lb ? "<td></td>" : ""}
-        ${cols.map(([, , , ca, me, sc]) => { const v = r.values[`${ca}.${me}`];
-          return v == null ? `<td class="num na" title="Not measured">–</td>` : `<td class="num">${fmtNum(v * sc)}</td>`; }).join("")}</tr>`).join("");
-    const groups = [];
-    cols.forEach(([g]) => { const last = groups[groups.length - 1]; if (last && last[0] === g) last[1]++; else groups.push([g, 1]); });
-    const lead = lb ? 3 : rk ? 2 : 1;
-    const table = `<div class="table-wrap"><table class="bn-table${rk ? " bn-compact" : ""}">
-      <thead><tr><th colspan="${lead}"></th>${groups.map(([g, n]) => `<th class="grp" colspan="${n}">${esc(g)}</th>`).join("")}</tr>
-        <tr>${lb || rk ? `<th class="num">#</th>` : ""}<th class="who">App</th>${lb ? `<th class="num">Score</th>` : ""}${cols.map(([, l, u, , , , hi], j) => rk
-          ? `<th class="num" aria-sort="${j === si ? ((hi !== rev) ? "descending" : "ascending") : "none"}"><button type="button" class="bn-sort${j === si ? " on" : ""}" data-i="${j}" title="Sort by ${esc(l)}">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></button></th>`
-          : `<th class="num">${esc(l)}<span>${esc(u)} ${hi ? "↑" : "↓"}</span></th>`).join("")}</tr></thead>
-      <tbody>${apps.map((a, i) => `<tr${lb && i === 0 ? ' class="lead"' : ""}>${lb ? `<td class="num">${i + 1}</td>` : rk ? `<td class="num"><span class="rk ${i === 0 ? "r1" : i === apps.length - 1 ? "rlast" : "rmid"}">${i + 1}</span></td>` : ""}
-        <td class="who"><b>${esc(name(a))}</b><span class="note">${esc(ver(a))}${meta(a)}</span></td>
-        ${lb ? `<td class="num" title="Tie-aware score ${lb[a].score_tie.toFixed(2)}"><b>${lb[a].score.toFixed(2)}</b></td>` : ""}
-        ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}</tbody></table></div>`;
-
-    const appCards = BENCH_CORES.map(([core, what, list]) => {
-      const rows = apps.filter((c) => list[c]).map((c) => {
+    const score = this.stats("lab", "score"), byScore = Object.keys(x.versions).sort((p, q) => (score[q] || { median: -1 }).median - (score[p] || { median: -1 }).median);
+    this.cur = byScore[0];
+    const appCards = I ? "" : BENCH_CORES.map(([core, what, list]) => {
+      const rows = byScore.filter((c) => list[c]).map((c) => {
         const [detail, lic, stack] = list[c];
-        return `<li><b>${esc(name(c))}</b> <span class="v">${esc(ver(c))}</span>${detail ? `<span>${esc(detail)}</span>` : ""}
+        return `<li><b>${esc(benchName(c))}</b> <span class="v">${esc(this.ver(c))}</span>${detail ? `<span>${esc(detail)}</span>` : ""}
           ${stack ? `<span>IP stack: ${esc(stack)}</span>` : ""}${lic ? `<span class="lic">${esc(lic)}</span>` : ""}</li>`;
       }).join("");
       return rows ? `<div class="core"><h4>${esc(core)} <span>${esc(what)}</span></h4><ul>${rows}</ul></div>` : "";
     }).join("");
+    const powerNote = I ? "Power is the whole phone's, minus the same test without a VPN." : "Energy and CPU are macOS's own figures for the app's tunnel process.";
 
     $("#bn-body").innerHTML = `
       <div class="bn-block"><p class="bn-setup">${esc(BENCH_SETUPS[this.exp][1])}</p>
-        <div class="bn-meta">${x.device ? `<span><b>${esc(BENCH_MACS[x.device] || x.device)}</b>, on the USB cable</span>` : `<span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>`}
-          <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
-          <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div></div>
-      ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>Speed against efficiency</h3>
-        ${benchScatter(Object.fromEntries(Object.entries(stats("speed", "gbps_avg")).map(([a, v]) => [a, v.median])),
-          Object.fromEntries(Object.entries(stats("down_200", this.exp === "I" ? "phone_energy_per_gb" : "tunnel_energy_per_gb")).map(([a, v]) => [a, v.median])), name,
-          ...(this.exp === "I" ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []))}
-        <p class="note">Top right is best. Gray lines connect equal scores. Hover a dot for its numbers.</p></div>` : ""}
-      <div class="bn-block"><h3>${lb ? "Leaderboard and every measure" : "Every measure"}</h3>
-        ${table}
-        <p class="note">Medians over all rounds; hover a number for its range. ↓ lower is better, ↑ higher is better.
-          <span class="key best">Green</span> = best or tied with the best (ranges overlap); <span class="key worst">red</span> = worst.
-          ${this.exp === "I" ? "Power is the whole phone's, minus the same test without a VPN." : "Energy and CPU are macOS's own figures for the app's tunnel process."}</p>
-        ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
-        ${[BENCH_CHAIN_NOTE, BENCH_MTU_NOTE].map(([h, t]) => `<p class="bn-callout"><b>${esc(h)}</b> ${esc(t)}</p>`).join("")}</div>
-      ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>How we tested</h3>${(this.exp === "I" ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD).map((t) => `<p class="note">${esc(t)}</p>`).join("")}</div>` : ""}
-      ${appCards && this.exp !== "I" ? `<div class="bn-block"><h3>What's inside each app</h3>
+        <dl class="bn-meta">
+          <div><dt>Device</dt><dd>${esc(BENCH_MACS[x.device || x.mac] || x.device || x.mac)}</dd></div>
+          <div><dt>Power</dt><dd>${x.device ? "USB cable" : "Battery"}</dd></div>
+          <div><dt>${x.sessions.length > 1 ? "Runs" : "Run"}</dt><dd>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</dd></div>
+          <div><dt>Rounds</dt><dd>${x.rounds}</dd></div>
+          <div><dt>Apps</dt><dd>${byScore.length}</dd></div></dl></div>
+      <div class="bn-duo">
+        <section class="screen bn-rank-screen" aria-labelledby="bn-rank-h"><div class="screen-head"><h3 id="bn-rank-h">Ranking</h3></div>
+          <div class="meas" role="radiogroup" aria-label="Rank by"></div><p class="screen-note" id="bn-rank-note"></p>
+          <ol class="ranked" id="bn-rank"></ol></section>
+        <section class="screen bn-chart-screen" aria-labelledby="bn-chart-h"><div class="screen-head"><h3 id="bn-chart-h">Speed against efficiency</h3></div>
+          <div id="bn-chart"></div><p class="bn-readout" id="bn-readout" aria-live="polite"></p>
+          <p class="note">Top right is best. Dashed lines connect equal scores. Hover or tap a dot to read its numbers.</p></section>
+      </div>
+      <p class="note">Values are medians over all rounds; hover one for its range. Tap an app in the ranking for all its numbers.
+        <span class="key best">Green</span> = best or tied with the best (ranges overlap). ${powerNote}</p>
+      <div class="bn-callouts">${[BENCH_CHAIN_NOTE, BENCH_MTU_NOTE].map(([h, t]) => `<p class="bn-callout"><b>${esc(h)}</b> ${esc(t)}</p>`).join("")}</div>
+      <div class="bn-block"><h3>How we tested</h3>${(I ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD).map((t) => `<p class="note">${esc(t)}</p>`).join("")}</div>
+      ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>Grouped by the core that carries the traffic, as found in each installed Mac app. Licenses are from each project's public
           repository; none shown means closed source or unknown.</p>
         <div class="cores">${appCards}</div></div>` : ""}
       <p class="note bn-foot">Independent, non-commercial testing on one Mac and one iPhone, October 2026. Results depend on the device, the OS and
         the app version; a real network adds its own costs.</p>`;
+    this.ranked();
+    this.chart();
+  },
+  // the ranking, best first by the chosen measure
+  ranked() {
+    const cols = BENCH_COLS[this.exp], si = this.sort, col = cols[si], [, , unit, ca0, me0, sc0, hi0] = col;
+    const s = this.stats(ca0, me0);
+    const m0 = (a) => (s[a] || { median: hi0 ? -Infinity : Infinity }).median;
+    const apps = Object.keys(this.x.versions).sort((p, q) => hi0 ? m0(q) - m0(p) : m0(p) - m0(q));
+    // bar length: the value as a share of the largest one, so a lower value always draws a shorter bar
+    const top = Math.max(...Object.values(s).map((y) => y.max));
+    const frac = (v) => v / top, pct = (f) => (100 * f).toFixed(2);
+    const range = (c, a) => { const [, , u, ca, me, sc] = c, v = this.stats(ca, me)[a];
+      return v && v.n > 1 ? `median ${fmtNum(v.median * sc)}, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} ${u} over ${v.n} rounds` : ""; };
+
+    $(".meas").innerHTML = cols.map((c, j) => `<button type="button" role="radio" aria-checked="${j === si}" data-i="${j}">${esc(benchKey(c))}</button>`).join("");
+    $("#bn-rank-note").textContent = `${unit[0].toUpperCase() + unit.slice(1)}, ${hi0 ? "higher" : "lower"} is better. `
+      + "Bar length is the value; the thin bracket is the range over rounds.";
+    const ol = $("#bn-rank");
+    ol.classList.remove("drawn");
+    ol.innerHTML = apps.map((a, i) => {
+      const v = s[a], f = v && this.flag(col, a);
+      const bar = v ? `<i class="fill" style="--w:${frac(v.median).toFixed(4)}"></i>${v.n > 1 ? `<i class="rng" style="left:${pct(Math.min(frac(v.min), frac(v.max)))}%;width:${pct(Math.abs(frac(v.max) - frac(v.min)))}%"></i>` : ""}` : "";
+      const all = cols.map((c) => { const [, , u, ca, me, sc] = c, w = this.stats(ca, me)[a];
+        return `<div class="${this.flag(c, a)}"><dt>${esc(benchKey(c))} <span>${esc(u)}</span></dt><dd title="${esc(range(c, a))}">${w ? fmtNum(w.median * sc) : "–"}</dd></div>`; }).join("");
+      return `<li style="--i:${i}"><details class="rr" data-app="${a}"><summary>
+        <span class="rr-n">${i + 1}</span><span class="rr-name"><b>${esc(benchName(a))}</b><span class="rr-meta">${this.meta(a)}</span></span>
+        <span class="rr-v ${f || ""}" title="${esc(range(col, a))}">${v ? fmtNum(v.median * sc0) : "–"}</span>
+        <span class="rr-bar" aria-hidden="true">${bar}</span></summary>
+        <dl class="rr-all">${all}</dl></details></li>`;
+    }).join("");
+    requestAnimationFrame(() => requestAnimationFrame(() => ol.classList.add("drawn")));
+  },
+  // the scatter, redrawn at the width of its screen so text stays readable on a phone
+  chart() {
+    const box = $("#bn-chart"), I = this.exp === "I";
+    const med = (st) => Object.fromEntries(Object.entries(st).map(([a, v]) => [a, v.median]));
+    this.sp = med(this.stats("speed", "gbps_avg"));
+    this.en = med(this.stats("down_200", I ? "phone_energy_per_gb" : "tunnel_energy_per_gb"));
+    this.cw = box.clientWidth;
+    box.innerHTML = benchScatter(this.sp, this.en, benchName, Math.max(300, this.cw), ...(I ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []));
+    this.pick(this.cur);
+  },
+  // the readout under the chart: one app's numbers, its dot ringed
+  pick(a) {
+    if (this.sp[a] == null || this.en[a] == null) return;
+    this.cur = a;
+    document.querySelectorAll("#bn-chart .pt, #bn-rank .rr").forEach((p) => p.classList.toggle("on", p.dataset.app === a));
+    const sc = this.stats("lab", "score")[a];
+    $("#bn-readout").innerHTML = `<b>${esc(benchName(a))}</b><span>${fmtNum(this.sp[a])} Gbit/s average</span><span>${fmtNum(this.en[a])} J per GB</span>${sc ? `<span>score ${fmtNum(sc.median)}</span>` : ""}`;
   }
 };
 // lab chart: speed (up) against energy per GB (right = less), both log scales. The score's equal-score lines are straight here.
-function benchScatter(sp, en, name, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s") {
-  const apps = Object.keys(sp).filter((a) => en[a]), W = 680, H = 400, L = 52, R = 16, T = 14, B = 46;
+function benchScatter(sp, en, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s") {
+  const H = Math.round(W * (W < 420 ? 1.08 : W < 640 ? 0.85 : W < 900 ? 0.62 : 0.4)), L = 46, R = 12, T = 12, B = 44;
+  const apps = Object.keys(sp).filter((a) => en[a]);
   const lg = Math.log10, X = (e) => L + (lg(e1) - lg(e)) / (lg(e1) - lg(e0)) * (W - L - R), Y = (s) => T + (lg(s1) - lg(s)) / (lg(s1) - lg(s0)) * (H - T - B);
   const spMax = Math.max(...apps.map((a) => sp[a])), enMin = Math.min(...apps.map((a) => en[a]));
   const score = (a) => 100 * (sp[a] / spMax) ** 0.3 * (enMin / en[a]) ** 0.7;
@@ -465,14 +518,14 @@ function benchScatter(sp, en, name, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], 
     const t = top[0] - 4 > L + 50 ? `x="${top[0] - 4}" y="${top[1] + 12}" text-anchor="end"` : `x="${low[0] + 4}" y="${low[1] - 4}" text-anchor="start"`;
     g += `<polyline class="iso" points="${pts.map((q) => q.join(",")).join(" ")}"/><text class="iso-t" ${t}>score ${S}</text>`;
   });
-  // labels: best score first; try right, left, above, below, then the corners; skip if nothing fits (the tooltip and table still name it)
+  // labels: best score first; try right, left, above, below, then the corners; skip if nothing fits (the readout and ranking still name it)
   const boxes = apps.map((a) => [X(en[a]) - 7, Y(sp[a]) - 7, 14, 14]);
   const hit = (b) => b[0] < L || b[0] + b[2] > W - R || b[1] < T || b[1] + b[3] > H - B
     || boxes.some((c) => b[0] < c[0] + c[2] && c[0] < b[0] + b[2] && b[1] < c[1] + c[3] && c[1] < b[1] + b[3]);
   let dots = "", labels = "";
   apps.sort((p, q) => score(q) - score(p)).forEach((a) => {
-    const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.4 + 2, tip = `${name(a)}: ${fmtNum(sp[a])} Gbit/s average, ${fmtNum(en[a])} J per GB, score ${fmtNum(score(a))}`;
-    dots += `<g class="pt"><title>${esc(tip)}</title><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
+    const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.6 + 2;
+    dots += `<g class="pt" data-app="${esc(a)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
     const at = [[cx + 9, cy - 7, "start"], [cx - 9 - w, cy - 7, "end"], [cx - w / 2, cy - 22, "middle"], [cx - w / 2, cy + 8, "middle"],
       [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"],
       // farther out, joined to the dot by a short line
@@ -480,13 +533,13 @@ function benchScatter(sp, en, name, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], 
       .map(([bx, by, an]) => [[bx, by, w, 14], an]).find(([b]) => !hit(b));
     if (!at) return;
     const [[bx, by], an] = at; boxes.push(at[0]);
-    if (Math.abs(by + 7 - cy) > 15) labels += `<line class="gr" x1="${cx}" y1="${cy + (by > cy ? 5 : -5)}" x2="${an === "start" ? bx : bx + w}" y2="${by + (by > cy ? 2 : 12)}"/>`;
+    if (Math.abs(by + 7 - cy) > 15) labels += `<line class="gr lead" x1="${cx}" y1="${cy + (by > cy ? 5 : -5)}" x2="${an === "start" ? bx : bx + w}" y2="${by + (by > cy ? 2 : 12)}"/>`;
     labels += `<text class="lbl" x="${an === "start" ? bx : an === "end" ? bx + w : bx + w / 2}" y="${by + 11}" text-anchor="${an}">${esc(name(a))}</text>`;
   });
-  return `<div class="bn-chart-wrap"><svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average speed against energy per GB for each app; the table below has every value.">
-    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">${esc(xLabel)}, J per GB (log) · less →</text>
-    <text class="ax-t" transform="translate(13 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Average speed, Gbit/s (log) · faster ↑</text>
-    ${dots}${labels}</svg></div>`;
+  return `<svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average speed against energy per GB for each app; the ranking has every value.">
+    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">${esc(xLabel)}, J per GB${W < 560 ? "" : " (log), less is better"}</text>
+    <text class="ax-t" transform="translate(13 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Average speed, Gbit/s${W < 560 ? "" : " (log), faster is up"}</text>
+    ${labels}${dots}</svg>`;
 }
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
 
