@@ -281,7 +281,7 @@ const Picks = {
 };
 
 /* ==================== Client-app benchmark ====================
-   Reads bench/experiments.json. Speed, efficiency (Stage 1 lab) and chain + rules, never pooled. */
+   Reads bench/experiments.json. The Mac and iPhone labs, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
   streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN" };
@@ -297,37 +297,37 @@ const BENCH_CORES = [
   ["Own core", "no sing-box, Xray or mihomo inside", { anywhere: ["Swift", "GPL-3.0", "AnywhereIP (own, Swift)"], surge: [""], shadowrocket: [""],
     egern: ["", "", "own user-space stack (vendor's note, 2.15)"] }]];
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 11 Pro" };
-// keep in sync with make-static.py and proxy-bench/results/RESULTS.md
-const BENCH_IPHONE_NOTE = "iPhone check (16 Oct): on an iPhone 11 Pro (iOS 27, same chain + rules, 2 rounds, whole-phone power from the battery gauge over USB), "
-  + "Anywhere 2.4 and Egern tied: 0.93 W vs 0.93–0.95 W at a steady 50 Mbit/s download (about 148–152 J per GB for the whole phone), "
-  + "the same single-connection speed (70–75 Mbit/s) and page first-byte times within run-to-run noise. Idle draw was within noise of no VPN for both. "
-  + "The Mac's ~4× gap in app energy per GB is in the app's own small share of power and doesn't show at the whole-device level.";
 // keep in sync with make-static.py
-const BENCH_LAB_METHOD = "One MacBook Air M1 (macOS 27.0.1), on battery, screen off, no app windows open. Each app ran in its TUN (whole-system VPN) mode "
-  + "with the same Shadowsocks 2022 profile (2022-blake3-aes-128-gcm), pointed at a sing-box server on the same Mac; iperf3 3.22 sent traffic through the "
-  + "app's tunnel to that server and back. No internet and no remote server are involved, so the numbers show each app's own overhead. A script switched "
-  + "the apps on and off one at a time, in two rounds (the second in reverse order); each number is the median of the two. Speed: 5 s per test after a "
-  + "2 s warm-up, over one and over four parallel connections. Efficiency: a steady 200 Mbit/s download for 20 s; energy is macOS's own estimate for "
-  + "the app's tunnel process, CPU is that process's CPU time, both per GB moved, and memory is its footprint at the end of the test. Every test checked "
-  + "that its bytes went through the app's tunnel; a test with any keyboard or trackpad input was thrown out and repeated. MTU is the tunnel's packet "
-  + "size as macOS reported it: we asked for 4000 where we could; apps that stay at 1500 handle about 2.7× more packets per GB "
-  + "(Happ's MTU setting has no effect on the Mac tunnel). Karing used its mixed stack; its four-connection download is from one round. Hiddify and v2rayN need a click to connect, so a person clicked Connect while the script waited. Hiddify's Mac release (5.0.0, a development build) has no helper to set up the tunnel, so it ran as root, and it has no MTU setting (9000). v2rayN chains two cores (sing-box for the tunnel, then Xray); its one-connection upload is from one round. Versions as "
-  + "installed on 20 Oct 2026 (Hiddify and v2rayN: 21 Oct). The sing-box command line (no app, no GUI) is ranked with the apps: it shows what the core alone costs. "
-  + "Score (out of 100) = 30% speed + 70% efficiency, each as a ratio to the best app: 100 × (average speed ÷ best average speed)^0.3 × "
-  + "(best energy per GB ÷ energy per GB)^0.7. Efficiency weighs more because every app near the top is already far faster than any real internet "
-  + "connection. Click a column header to sort by that column instead.";
+const BENCH_CHAIN_NOTE = ["Real use costs more.", "These labs measure one proxy with no rules. In an earlier test through real servers, "
+  + "two chained proxies with routing rules used about 3× the energy per GB of a single proxy (1.8–3.1× across the apps that kept the same version)."];
 // keep in sync with make-static.py
-const BENCH_IPHONE_METHOD = "One iPhone 11 Pro (iOS 27.0.1), on the USB cable at full charge, run overnight by an automated test with nobody touching it. A small test app on the iPhone runs its own Shadowsocks 2022 server (2022-blake3-aes-128-gcm), and every VPN app's profile points at it, so the traffic goes app → VPN tunnel → server on the same phone, with no Wi-Fi or internet in the way. Speed: upload and download over 1 and 4 connections, 2 s warm-up then 5 s measured, median of 3 tries. At 200 Mbit/s: one download held at 200 Mbit/s for 120 s (first 15 s skipped). Power is the whole phone's, from its battery gauge; \"extra\" subtracts the same test with no VPN (0.68 W, median of 4 no-VPN runs spread over the night). Energy per GB = extra power ÷ the speed actually held: Happ held only 130 Mbit/s and V2Box 180. CPU and memory are the VPN app's own tunnel process, from the phone's process monitor. Idle: 10 min with the screen locked (first 60 s skipped). Idle extra power is mostly within noise (about ±0.07 W around the no-VPN 0.65 W); wakeups are how often the tunnel woke the processor, which adds up over a day. Score (out of 100), the same formula as the Mac lab: 100 × (average speed ÷ best average speed)^0.3 × (best extra energy per GB ÷ extra energy per GB)^0.7. 3 rounds, apps in a different order each round; one Hiddify round failed partway, so its speed and 200 Mbit/s numbers are from 2 rounds. Versions as installed on 21 Oct 2026. Click a column header to sort by that column instead.";
+const BENCH_LAB_METHOD = [
+  "MacBook Air M1, macOS 27.0.1, on battery, screen off, no app windows open. Every app ran in TUN mode with the same Shadowsocks 2022 profile "
+  + "(2022-blake3-aes-128-gcm) to a sing-box server on the same Mac; iperf3 3.22 drove the traffic. A script ran the apps one at a time over two rounds, "
+  + "the second in reverse order. Speed: 5 s after a 2 s warm-up, over 1 and 4 connections. Efficiency: a steady 200 Mbit/s download for 20 s, with the "
+  + "energy, CPU time and memory of the app's tunnel process. Each test confirmed its traffic went through the tunnel; any test with keyboard or trackpad "
+  + "input was repeated. The sing-box command line is included as a baseline for the core alone. Versions as installed on 20–21 Oct 2026.",
+  "MTU is as macOS reported it (4000 requested where possible); apps at 1500 process about 2.7× more packets per GB. "
+  + "Score = 100 × (speed ÷ best speed)^0.3 × (best energy per GB ÷ energy per GB)^0.7: efficiency weighs more because the top apps are already far faster "
+  + "than any internet connection.",
+  "Exceptions: Karing used its mixed stack. Happ ignores its MTU setting on the Mac. Hiddify 5.0.0 (a development build) ran as root with its fixed MTU of 9000. "
+  + "v2rayN chains two cores (sing-box, then Xray). Karing's 4-connection download and v2rayN's 1-connection upload are from one round."];
+// keep in sync with make-static.py
+const BENCH_IPHONE_METHOD = [
+  "iPhone 11 Pro, iOS 27.0.1, on the USB cable at full charge, run overnight by an automated test with nobody touching it. A test app on the phone runs "
+  + "a Shadowsocks 2022 server (2022-blake3-aes-128-gcm) that every VPN app points at, so no Wi-Fi or internet is involved. Three rounds, apps in a "
+  + "different order each round. Speed: 5 s after a 2 s warm-up, over 1 and 4 connections. Efficiency: one download held at 200 Mbit/s for 120 s. "
+  + "Idle: 10 min with the screen locked. Versions as installed on 21 Oct 2026.",
+  "Power is the whole phone's, from its battery gauge; \"extra\" subtracts the same test without a VPN (0.68 W under load, 0.65 W idle). "
+  + "Energy per GB uses the speed actually held (Happ reached only 130 Mbit/s, V2Box 180). CPU and memory are the tunnel process's own. "
+  + "Idle power differences are mostly within noise (±0.07 W); wakeups show how often the tunnel woke the processor. Same score formula as the Mac lab.",
+  "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds."];
 const BENCH_SETUPS = {
-  L: ["Lab: speed + efficiency", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and how much energy, CPU time and memory its tunnel needs for a steady 200 Mbit/s download. Ranked by a score of 30% speed and 70% efficiency; click any column header to sort by it."],
-  I: ["Lab: on iPhone", "The same lab on an iPhone: a test server runs on the phone itself, so only the VPN app is in the way. How fast each app can move data, and how much extra power, CPU time and memory the phone needs for a steady 200 Mbit/s download, plus what the tunnel costs at idle. Ranked by a score of 30% speed and 70% efficiency. Click any column header to sort by it."],
-  A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."]
+  L: ["Lab: speed + efficiency", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."],
+  I: ["Lab: on iPhone", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); click a column header to sort."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
-const IDLE_COLS = (c) => [["Idle", "Wakeups", "per s", c, "tunnel_wakeups_per_s", 1], ["Idle", "Avg power", "µW", c, "tunnel_power_w", 1e6]];
-const LOAD_COLS = (g, c) => [[g, "Power", "mW", c, "tunnel_power_w", 1e3], [g, "Energy", "J per GB", c, "tunnel_energy_per_gb", 1], [g, "CPU", "%", c, "tunnel_cpu_pct", 1]];
 const BENCH_COLS = {
-  A: [...IDLE_COLS("idle"), ...LOAD_COLS("At 100 Mbit/s", "dl_100m"), ["Full speed", "Speed", "Mbit/s", "dl_max", "mbps", 1, true], ["Web pages", "First byte", "ms", "req50", "first_byte_ms", 1]],
   L: [["", "Score", "of 100", "lab", "score", 1, true],
     ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
     ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
@@ -407,17 +407,6 @@ const Bench = {
         ${lb ? `<td class="num" title="Tie-aware score ${lb[a].score_tie.toFixed(2)}"><b>${lb[a].score.toFixed(2)}</b></td>` : ""}
         ${cols.map((c) => cell(c, a)).join("")}</tr>${recheckRows(a)}`).join("")}</tbody></table></div>`;
 
-    const cc = this.data.chain_cost && this.data.chain_cost["dl_100m.tunnel_energy_per_gb"];
-    const chain = this.exp === "A" && cc ? `<div class="bn-block"><h3>What the chain costs</h3>
-        <p>App energy per GB at 100 Mbit/s, basic setup against chain + rules. The two ran on different days.</p>
-        <div class="table-wrap"><table><thead><tr><th>App</th><th class="num">Basic (J)</th><th class="num">Chain + rules (J)</th><th class="num">Factor</th></tr></thead><tbody>
-        ${Object.entries(cc).map(([a, v]) => `<tr><td><b>${esc(name(a))}</b>${v.same_version ? "" : ` <span class="note">updated in between (2.3 → 2.4)</span>`}</td>
-          <td class="num">${fmtNum(v.one_hop)}</td><td class="num">${fmtNum(v.chain)}</td><td class="num">${v.factor.toFixed(1)}×</td></tr>`).join("")}
-        </tbody></table></div>
-        <p>Anywhere 2.4 runs about 20–27% of its tunnel work on the Mac's performance cores (2.3 used none). It needs less CPU time per GB
-          (24 s vs 39 s on the chain), but each CPU-second costs about 3× the energy. On the chain, 2.3 measured 2.2 J/GB in a one-round check,
-          so most of its jump comes from the update.</p></div>` : "";
-
     const appCards = BENCH_CORES.map(([core, what, list]) => {
       const rows = apps.filter((c) => list[c]).map((c) => {
         const [detail, lic, stack] = list[c];
@@ -436,24 +425,21 @@ const Bench = {
         ${benchScatter(Object.fromEntries(Object.entries(stats("speed", "gbps_avg")).map(([a, v]) => [a, v.median])),
           Object.fromEntries(Object.entries(stats("down_200", this.exp === "I" ? "phone_energy_per_gb" : "tunnel_energy_per_gb")).map(([a, v]) => [a, v.median])), name,
           ...(this.exp === "I" ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []))}
-        <p class="note">Top right is best: fast and light on the battery. The gray lines join points with the same score, so an app's place in the
-          ranking is how far up-right of them it sits. Hover a dot for its numbers.</p></div>` : ""}
+        <p class="note">Top right is best. Gray lines connect equal scores. Hover a dot for its numbers.</p></div>` : ""}
       <div class="bn-block"><h3>${lb ? "Leaderboard and every measure" : "Every measure"}</h3>
         ${table}
-        <p>Each number is the app's median over all rounds; hover it for the range. ↓ lower is better, ↑ higher is better.
-          <span class="key best">Green</span> = best, or tied with the best (their ranges overlap). <span class="key worst">Red</span> = worst.
-          ${lb ? "Score = 35% efficiency under traffic + 35% efficiency at idle + 30% performance; each part is the app's average place, so lower is better." : ""}
-          ${this.exp === "I" ? "Power is the whole phone's, from its battery gauge." : "App power and energy are macOS's own per-process estimates for the tunnel process."}${x.note ? ` ${esc(x.note)}` : ""}</p>
+        <p class="note">Medians over all rounds; hover a number for its range. ↓ lower is better, ↑ higher is better.
+          <span class="key best">Green</span> = best or tied with the best (ranges overlap); <span class="key worst">red</span> = worst.
+          ${this.exp === "I" ? "Power is the whole phone's, minus the same test without a VPN." : "Energy and CPU are macOS's own figures for the app's tunnel process."}</p>
         ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
-        ${this.exp === "A" ? `<p class="bn-callout"><b>${esc(BENCH_IPHONE_NOTE.split(": ")[0])}</b>${esc(BENCH_IPHONE_NOTE.charAt(BENCH_IPHONE_NOTE.indexOf(": ") + 2).toUpperCase() + BENCH_IPHONE_NOTE.slice(BENCH_IPHONE_NOTE.indexOf(": ") + 3))}</p>` : ""}</div>
-      ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>How we tested</h3><p class="note">${esc(this.exp === "I" ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD)}</p></div>` : ""}
-      ${chain}
+        <p class="bn-callout"><b>${esc(BENCH_CHAIN_NOTE[0])}</b> ${esc(BENCH_CHAIN_NOTE[1])}</p></div>
+      ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>How we tested</h3>${(this.exp === "I" ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD).map((t) => `<p class="note">${esc(t)}</p>`).join("")}</div>` : ""}
       ${appCards && this.exp !== "I" ? `<div class="bn-block"><h3>What's inside each app</h3>
-        <p>Grouped by the core that moves the traffic, read from the code inside each installed Mac app. License from the project's
-          public code page; no license shown means closed source or not sure. IP stack only where we know it.</p>
+        <p>Grouped by the core that carries the traffic, as found in each installed Mac app. Licenses are from each project's public
+          repository; none shown means closed source or unknown.</p>
         <div class="cores">${appCards}</div></div>` : ""}
-      <p class="note bn-foot">Footnote: this is not a professional lab test, just a personal, nerdy-interest one: one Mac on Wi-Fi, a few days,
-        a handful of rounds. On a phone over cellular the results may differ.</p>`;
+      <p class="note bn-foot">Independent, non-commercial testing on one Mac and one iPhone, October 2026. Results depend on the device, the OS and
+        the app version; a real network adds its own costs.</p>`;
   }
 };
 // lab chart: speed (up) against energy per GB (right = less), both log scales. The score's equal-score lines are straight here.
