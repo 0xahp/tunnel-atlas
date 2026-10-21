@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="264" viewBox="0 0 560 264" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="560" height="264" rx="12" fill="#262624"/>
+<text x="20" y="30" font-size="15" font-weight="600" fill="#eceae4">Energy: top 7</text>
+<text x="20" y="49" font-size="12" fill="#8f8a81">app energy per GB at 200 Mbit/s, joules · lower is better</text>
+<text x="120" y="79" font-size="12.5" text-anchor="end" fill="#eceae4">Egern</text>
+<rect x="130" y="68" width="170.5" height="15" rx="3" fill="#6fb487"/>
+<text x="306.5" y="79" font-size="12" fill="#8f8a81">0.26</text>
+<text x="120" y="105" font-size="12.5" text-anchor="end" fill="#eceae4">SFM</text>
+<rect x="130" y="94" width="179.5" height="15" rx="3" fill="#6b5a2e"/>
+<text x="315.5" y="105" font-size="12" fill="#8f8a81">0.28</text>
+<text x="120" y="131" font-size="12.5" text-anchor="end" fill="#eceae4">Throne</text>
+<rect x="130" y="120" width="186.4" height="15" rx="3" fill="#6b5a2e"/>
+<text x="322.4" y="131" font-size="12" fill="#8f8a81">0.29</text>
+<text x="120" y="157" font-size="12.5" text-anchor="end" fill="#eceae4">sing-box CLI</text>
+<rect x="130" y="146" width="221.2" height="15" rx="3" fill="#6b5a2e"/>
+<text x="357.2" y="157" font-size="12" fill="#8f8a81">0.34</text>
+<text x="120" y="183" font-size="12.5" text-anchor="end" fill="#eceae4">Surge</text>
+<rect x="130" y="172" width="299.6" height="15" rx="3" fill="#6b5a2e"/>
+<text x="435.6" y="183" font-size="12" fill="#8f8a81">0.46</text>
+<text x="120" y="209" font-size="12.5" text-anchor="end" fill="#eceae4">Shadowrocket</text>
+<rect x="130" y="198" width="347.8" height="15" rx="3" fill="#6b5a2e"/>
+<text x="483.8" y="209" font-size="12" fill="#8f8a81">0.54</text>
+<text x="120" y="235" font-size="12.5" text-anchor="end" fill="#eceae4">Hiddify</text>
+<rect x="130" y="224" width="370.0" height="15" rx="3" fill="#6b5a2e"/>
+<text x="506.0" y="235" font-size="12" fill="#8f8a81">0.57</text>
+<line x1="130" x2="130" y1="62" y2="248" stroke="#3e3d39"/>
+</svg>

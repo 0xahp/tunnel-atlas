@@ -301,14 +301,18 @@ const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 1
 const BENCH_CHAIN_NOTE = ["Real use costs more.", "These labs measure one proxy with no rules. In an earlier test through real servers, "
   + "two chained proxies with routing rules used about 3× the energy per GB of a single proxy (1.8–3.1× across the apps that kept the same version)."];
 // keep in sync with make-static.py
+const BENCH_MTU_NOTE = ["MTU changes results a lot.", "At the common 1500, an app handles about 2.7× more packets per GB than at 4000. "
+  + "In our checks, raising the MTU from 1500 to 4000 lifted SFM's upload from 10.8 to about 14.3 Gbit/s (1.3×), and Karing's speed from 0.9 to 2.4 Gbit/s "
+  + "(2.5×, with its stack also changed) while its CPU time per GB fell by about a fifth. On the Mac, the six apps stuck at 1500 are the six slowest. "
+  + "We set 4000 wherever an app allows it."];
+// keep in sync with make-static.py
 const BENCH_LAB_METHOD = [
   "MacBook Air M1, macOS 27.0.1, on battery, screen off, no app windows open. Every app ran in TUN mode with the same Shadowsocks 2022 profile "
   + "(2022-blake3-aes-128-gcm) to a sing-box server on the same Mac; iperf3 3.22 drove the traffic. A script ran the apps one at a time over two rounds, "
   + "the second in reverse order. Speed: 5 s after a 2 s warm-up, over 1 and 4 connections. Efficiency: a steady 200 Mbit/s download for 20 s, with the "
   + "energy, CPU time and memory of the app's tunnel process. Each test confirmed its traffic went through the tunnel; any test with keyboard or trackpad "
   + "input was repeated. The sing-box command line is included as a baseline for the core alone. Versions as installed on 20–21 Oct 2026.",
-  "MTU is as macOS reported it (4000 requested where possible); apps at 1500 process about 2.7× more packets per GB. "
-  + "Score = 100 × (speed ÷ best speed)^0.3 × (best energy per GB ÷ energy per GB)^0.7: efficiency weighs more because the top apps are already far faster "
+  "MTU is as macOS reported it (4000 requested where possible). Score = 100 × (speed ÷ best speed)^0.3 × (best energy per GB ÷ energy per GB)^0.7: efficiency weighs more because the top apps are already far faster "
   + "than any internet connection.",
   "Exceptions: Karing used its mixed stack. Happ ignores its MTU setting on the Mac. Hiddify 5.0.0 (a development build) ran as root with its fixed MTU of 9000. "
   + "v2rayN chains two cores (sing-box, then Xray). Karing's 4-connection download and v2rayN's 1-connection upload are from one round."];
@@ -432,7 +436,7 @@ const Bench = {
           <span class="key best">Green</span> = best or tied with the best (ranges overlap); <span class="key worst">red</span> = worst.
           ${this.exp === "I" ? "Power is the whole phone's, minus the same test without a VPN." : "Energy and CPU are macOS's own figures for the app's tunnel process."}</p>
         ${rechecks.map((r) => `<p class="note">* ${esc(r.note)}</p>`).join("")}
-        <p class="bn-callout"><b>${esc(BENCH_CHAIN_NOTE[0])}</b> ${esc(BENCH_CHAIN_NOTE[1])}</p></div>
+        ${[BENCH_CHAIN_NOTE, BENCH_MTU_NOTE].map(([h, t]) => `<p class="bn-callout"><b>${esc(h)}</b> ${esc(t)}</p>`).join("")}</div>
       ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>How we tested</h3>${(this.exp === "I" ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD).map((t) => `<p class="note">${esc(t)}</p>`).join("")}</div>` : ""}
       ${appCards && this.exp !== "I" ? `<div class="bn-block"><h3>What's inside each app</h3>
         <p>Grouped by the core that carries the traffic, as found in each installed Mac app. Licenses are from each project's public

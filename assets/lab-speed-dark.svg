@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="264" viewBox="0 0 560 264" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="560" height="264" rx="12" fill="#262624"/>
+<text x="20" y="30" font-size="15" font-weight="600" fill="#eceae4">Throughput: top 7</text>
+<text x="20" y="49" font-size="12" fill="#8f8a81">average of up/down × 1 and 4 connections, Gbit/s · higher is better</text>
+<text x="120" y="79" font-size="12.5" text-anchor="end" fill="#eceae4">Throne</text>
+<rect x="130" y="68" width="370.0" height="15" rx="3" fill="#6fb487"/>
+<text x="506.0" y="79" font-size="12" fill="#8f8a81">16.9</text>
+<text x="120" y="105" font-size="12.5" text-anchor="end" fill="#eceae4">sing-box CLI</text>
+<rect x="130" y="94" width="356.9" height="15" rx="3" fill="#6b5a2e"/>
+<text x="492.9" y="105" font-size="12" fill="#8f8a81">16.3</text>
+<text x="120" y="131" font-size="12.5" text-anchor="end" fill="#eceae4">Koala Clash</text>
+<rect x="130" y="120" width="231.4" height="15" rx="3" fill="#6b5a2e"/>
+<text x="367.4" y="131" font-size="12" fill="#8f8a81">10.6</text>
+<text x="120" y="157" font-size="12.5" text-anchor="end" fill="#eceae4">FlClash</text>
+<rect x="130" y="146" width="229.8" height="15" rx="3" fill="#6b5a2e"/>
+<text x="365.8" y="157" font-size="12" fill="#8f8a81">10.5</text>
+<text x="120" y="183" font-size="12.5" text-anchor="end" fill="#eceae4">Surge</text>
+<rect x="130" y="172" width="223.5" height="15" rx="3" fill="#6b5a2e"/>
+<text x="359.5" y="183" font-size="12" fill="#8f8a81">10.2</text>
+<text x="120" y="209" font-size="12.5" text-anchor="end" fill="#eceae4">Hiddify</text>
+<rect x="130" y="198" width="211.0" height="15" rx="3" fill="#6b5a2e"/>
+<text x="347.0" y="209" font-size="12" fill="#8f8a81">9.6</text>
+<text x="120" y="235" font-size="12.5" text-anchor="end" fill="#eceae4">SFM</text>
+<rect x="130" y="224" width="209.6" height="15" rx="3" fill="#6b5a2e"/>
+<text x="345.6" y="235" font-size="12" fill="#8f8a81">9.6</text>
+<line x1="130" x2="130" y1="62" y2="248" stroke="#3e3d39"/>
+</svg>
