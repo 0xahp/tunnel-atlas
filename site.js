@@ -316,16 +316,10 @@ const BENCH_LAB_METHOD = "One MacBook Air M1 (macOS 27.0.1), on battery, screen 
   + "(best energy per GB ÷ energy per GB)^0.7. Efficiency weighs more because every app near the top is already far faster than any real internet "
   + "connection. Click a column header to sort by that column instead.";
 // keep in sync with make-static.py
-const BENCH_IPHONE_METHOD = "One iPhone 11 Pro (iOS 27.0.1) on Wi-Fi, plugged into a Mac by USB, screen on at a fixed brightness. Each app ran its VPN with the same "
-  + "Shadowsocks 2022 profile (2022-blake3-aes-128-gcm), pointed at a sing-box server on the Mac; a test page in Safari, loaded through the app's tunnel, "
-  + "downloaded a steady 100 Mbit/s for 90 s. Power is the whole phone's draw from its battery gauge (charging excluded), averaged after the first 15 s. "
-  + "\"Above no VPN\" subtracts the same test with no VPN, run at the start (1.33 W) and the end (1.44 W): the phone drew a little more as it charged "
-  + "and warmed up, so each app is compared with a straight line between the two. Differences under about 0.1 W are within that drift. "
-  + "One round, apps one after another; Egern ran twice (first and last) to check the correction. Happ could not hold 100 Mbit/s (87). "
-  + "The Wi-Fi sets the top speed here (about 230 Mbit/s), so speed isn't ranked. Versions as installed on 20 Oct 2026.";
+const BENCH_IPHONE_METHOD = "One iPhone 11 Pro (iOS 27.0.1), on the USB cable at full charge, run overnight by an automated test with nobody touching it. A small test app on the iPhone runs its own Shadowsocks 2022 server (2022-blake3-aes-128-gcm), and every VPN app's profile points at it, so the traffic goes app → VPN tunnel → server on the same phone, with no Wi-Fi or internet in the way. Speed: upload and download over 1 and 4 connections, 2 s warm-up then 5 s measured, median of 3 tries. At 200 Mbit/s: one download held at 200 Mbit/s for 120 s (first 15 s skipped). Power is the whole phone's, from its battery gauge; \"extra\" subtracts the same test with no VPN (0.68 W, median of 4 no-VPN runs spread over the night). Energy per GB = extra power ÷ the speed actually held: Happ held only 130 Mbit/s and V2Box 180. CPU and memory are the VPN app's own tunnel process, from the phone's process monitor. Idle: 10 min with the screen locked (first 60 s skipped). Idle extra power is mostly within noise (about ±0.07 W around the no-VPN 0.65 W); wakeups are how often the tunnel woke the processor, which adds up over a day. Score (out of 100), the same formula as the Mac lab: 100 × (average speed ÷ best average speed)^0.3 × (best extra energy per GB ÷ extra energy per GB)^0.7. 3 rounds, apps in a different order each round; one Hiddify round failed partway, so its speed and 200 Mbit/s numbers are from 2 rounds. Versions as installed on 21 Oct 2026. Click a column header to sort by that column instead.";
 const BENCH_SETUPS = {
   L: ["Lab: speed + efficiency", "A lab test on the Mac itself, with no internet in the way: how fast each app can move data, and how much energy, CPU time and memory its tunnel needs for a steady 200 Mbit/s download. Ranked by a score of 30% speed and 70% efficiency; click any column header to sort by it."],
-  I: ["On iPhone", "The same lab idea on an iPhone: how much more power the whole phone draws while each app's VPN carries a steady 100 Mbit/s download. Lower is better. Egern, Shadowrocket and Anywhere are tied: their gaps are smaller than the 0.1 W the phone drifted during the test (below zero = the same as no VPN)."],
+  I: ["Lab: on iPhone", "The same lab on an iPhone: a test server runs on the phone itself, so only the VPN app is in the way. How fast each app can move data, and how much extra power, CPU time and memory the phone needs for a steady 200 Mbit/s download, plus what the tunnel costs at idle. Ranked by a score of 30% speed and 70% efficiency. Click any column header to sort by it."],
   A: ["Chain + rules", "The everyday setup: the app chains two proxies, and rules decide which sites use the tunnel, which go straight out and which ads are blocked."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
@@ -338,7 +332,12 @@ const BENCH_COLS = {
     ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
     ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "tunnel_energy_per_gb", 1], ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1],
     ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]],
-  I: [["At 100 Mbit/s", "Above no VPN", "mW", "down_100", "phone_extra_w", 1e3], ["At 100 Mbit/s", "Whole phone", "W", "down_100", "phone_w", 1]]
+  I: [["", "Score", "of 100", "lab", "score", 1, true],
+    ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
+    ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
+    ["At 200 Mbit/s", "Extra power", "mW", "down_200", "phone_extra_w", 1e3], ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "phone_energy_per_gb", 1],
+    ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1], ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1],
+    ["Idle", "Extra power", "mW", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
 };
 const Bench = {
   exp: "L",
@@ -432,9 +431,10 @@ const Bench = {
         <div class="bn-meta">${x.device ? `<span><b>${esc(BENCH_MACS[x.device] || x.device)}</b>, on the USB cable</span>` : `<span>Mac <b>${esc(BENCH_MACS[x.mac] || x.mac)}</b>, on battery</span>`}
           <span>${x.sessions.length > 1 ? "Runs" : "Run"} <b>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</b></span>
           <span>Rounds <b>${x.rounds}</b></span><span>Apps <b>${apps.length}</b></span></div></div>
-      ${this.exp === "L" ? `<div class="bn-block"><h3>Speed against efficiency</h3>
+      ${this.exp === "L" || this.exp === "I" ? `<div class="bn-block"><h3>Speed against efficiency</h3>
         ${benchScatter(Object.fromEntries(Object.entries(stats("speed", "gbps_avg")).map(([a, v]) => [a, v.median])),
-          Object.fromEntries(Object.entries(stats("down_200", "tunnel_energy_per_gb")).map(([a, v]) => [a, v.median])), name)}
+          Object.fromEntries(Object.entries(stats("down_200", this.exp === "I" ? "phone_energy_per_gb" : "tunnel_energy_per_gb")).map(([a, v]) => [a, v.median])), name,
+          ...(this.exp === "I" ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []))}
         <p class="note">Top right is best: fast and light on the battery. The gray lines join points with the same score, so an app's place in the
           ranking is how far up-right of them it sits. Hover a dot for its numbers.</p></div>` : ""}
       <div class="bn-block"><h3>${lb ? "Leaderboard and every measure" : "Every measure"}</h3>
@@ -456,21 +456,23 @@ const Bench = {
   }
 };
 // lab chart: speed (up) against energy per GB (right = less), both log scales. The score's equal-score lines are straight here.
-function benchScatter(sp, en, name) {
+function benchScatter(sp, en, name, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s") {
   const apps = Object.keys(sp).filter((a) => en[a]), W = 680, H = 400, L = 52, R = 16, T = 14, B = 46;
-  const lg = Math.log10, X = (e) => L + (lg(30) - lg(e)) / (lg(30) - lg(0.2)) * (W - L - R), Y = (s) => T + (lg(30) - lg(s)) / (lg(30) - lg(0.2)) * (H - T - B);
+  const lg = Math.log10, X = (e) => L + (lg(e1) - lg(e)) / (lg(e1) - lg(e0)) * (W - L - R), Y = (s) => T + (lg(s1) - lg(s)) / (lg(s1) - lg(s0)) * (H - T - B);
   const spMax = Math.max(...apps.map((a) => sp[a])), enMin = Math.min(...apps.map((a) => en[a]));
   const score = (a) => 100 * (sp[a] / spMax) ** 0.3 * (enMin / en[a]) ** 0.7;
-  const ticks = [0.2, 0.5, 1, 2, 5, 10, 20];
-  let g = ticks.map((v) => `<line class="gr" x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${H - B}"/><text class="ax" x="${X(v)}" y="${H - B + 16}" text-anchor="middle">${v}</text>`).join("")
-    + ticks.map((v) => `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${L - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("");
+  const tk = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100], ex = tk.filter((v) => v >= e0 && v < e1), sx = tk.filter((v) => v >= s0 && v < s1);
+  let g = ex.map((v) => `<line class="gr" x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${H - B}"/><text class="ax" x="${X(v)}" y="${H - B + 16}" text-anchor="middle">${v}</text>`).join("")
+    + sx.map((v) => `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${L - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("");
   // equal-score lines: speed = spMax * (S/100 / (enMin/e)^0.7)^(1/0.3)
   [10, 25, 50, 75].forEach((S) => {
     const s = (e) => spMax * ((S / 100) / (enMin / e) ** 0.7) ** (1 / 0.3), pts = [];
-    for (let k = 0; k <= 60; k++) { const e = 10 ** (lg(0.2) + k / 60 * (lg(30) - lg(0.2))), v = s(e); if (v >= 0.2 && v <= 30) pts.push([X(e), Y(v)]); }
+    for (let k = 0; k <= 60; k++) { const e = 10 ** (lg(e0) + k / 60 * (lg(e1) - lg(e0))), v = s(e); if (v >= s0 && v <= s1) pts.push([X(e), Y(v)]); }
     if (pts.length < 2) return;
-    const [lx, ly] = pts[0][1] < pts[pts.length - 1][1] ? pts[0] : pts[pts.length - 1];
-    g += `<polyline class="iso" points="${pts.map((q) => q.join(",")).join(" ")}"/><text class="iso-t" x="${lx - 4}" y="${ly + 12}" text-anchor="end">score ${S}</text>`;
+    const [top, low] = pts[0][1] < pts[pts.length - 1][1] ? [pts[0], pts[pts.length - 1]] : [pts[pts.length - 1], pts[0]];
+    // label at the top end, or at the lower end when the top end is against the speed axis
+    const t = top[0] - 4 > L + 50 ? `x="${top[0] - 4}" y="${top[1] + 12}" text-anchor="end"` : `x="${low[0] + 4}" y="${low[1] - 4}" text-anchor="start"`;
+    g += `<polyline class="iso" points="${pts.map((q) => q.join(",")).join(" ")}"/><text class="iso-t" ${t}>score ${S}</text>`;
   });
   // labels: best score first; try right, left, above, below, then the corners; skip if nothing fits (the tooltip and table still name it)
   const boxes = apps.map((a) => [X(en[a]) - 7, Y(sp[a]) - 7, 14, 14]);
@@ -488,7 +490,7 @@ function benchScatter(sp, en, name) {
     labels += `<text class="lbl" x="${an === "start" ? bx : an === "end" ? bx + w : bx + w / 2}" y="${by + 11}" text-anchor="${an}">${esc(name(a))}</text>`;
   });
   return `<div class="bn-chart-wrap"><svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average speed against energy per GB for each app; the table below has every value.">
-    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">Energy at 200 Mbit/s, J per GB (log) · less →</text>
+    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">${esc(xLabel)}, J per GB (log) · less →</text>
     <text class="ax-t" transform="translate(13 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Average speed, Gbit/s (log) · faster ↑</text>
     ${dots}${labels}</svg></div>`;
 }
