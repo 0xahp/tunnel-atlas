@@ -284,12 +284,13 @@ const Picks = {
    Reads bench/experiments.json. Speed, efficiency (Stage 1 lab) and chain + rules, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
-  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify" };
+  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN" };
 // core read from the Go modules inside each installed Mac app (20 Oct); license from the project's GitHub page; blank = not sure
 const BENCH_CORES = [
   ["sing-box", "Go; the SagerNet core", { sfm: ["libbox (gomobile)", "GPL-3.0"], cli: ["the core itself", "GPL-3.0 + name clause"],
-    karing: ["LibVpnCore", "GPL-3.0 + name clause", "mixed (as tested)"] }],
-  ["sing-box and Xray", "both cores built in", { throne: ["ThroneCore, a separate process", "GPL-3.0"], streisand: ["sing-box 1.14 + Xray"] }],
+    karing: ["LibVpnCore", "GPL-3.0 + name clause", "mixed (as tested)"], hiddify: ["hiddify-core (sing-box 1.13.0)", "", "mixed (as tested)"] }],
+  ["sing-box and Xray", "both cores built in", { throne: ["ThroneCore, a separate process", "GPL-3.0"], streisand: ["sing-box 1.14 + Xray"],
+    v2rayn: ["two processes in series: sing-box 1.14.3 TUN → Xray 26.10.10", "GPL-3.0", "mixed (as tested)"] }],
   ["mihomo", "Go; the Clash Meta core", { flclash: ["", "GPL-3.0"], verge: ["", "GPL-3.0"], koala: ["", "GPL-3.0"], clash: ["mihomo 1.19.32"],
     rabbithole: [""], clashplus: [""] }],
   ["Xray", "Go; the XTLS core", { onexray: ["libXray", "GPL-3.0"], happ: ["libXray"], v2box: [""], incy: [""] }],
@@ -310,8 +311,8 @@ const BENCH_LAB_METHOD = "One MacBook Air M1 (macOS 27.0.1), on battery, screen 
   + "the app's tunnel process, CPU is that process's CPU time, both per GB moved, and memory is its footprint at the end of the test. Every test checked "
   + "that its bytes went through the app's tunnel; a test with any keyboard or trackpad input was thrown out and repeated. MTU is the tunnel's packet "
   + "size as macOS reported it: we asked for 4000 where we could; apps that stay at 1500 handle about 2.7× more packets per GB "
-  + "(Happ's MTU setting has no effect on the Mac tunnel). Karing used its mixed stack; its four-connection download is from one round. Versions as "
-  + "installed on 20 Oct 2026. The sing-box command line (no app, no GUI) is ranked with the apps: it shows what the core alone costs. "
+  + "(Happ's MTU setting has no effect on the Mac tunnel). Karing used its mixed stack; its four-connection download is from one round. Hiddify and v2rayN need a click to connect, so a person clicked Connect while the script waited. Hiddify's Mac release (5.0.0, a development build) has no helper to set up the tunnel, so it ran as root, and it has no MTU setting (9000). v2rayN chains two cores (sing-box for the tunnel, then Xray); its one-connection upload is from one round. Versions as "
+  + "installed on 20 Oct 2026 (Hiddify and v2rayN: 21 Oct). The sing-box command line (no app, no GUI) is ranked with the apps: it shows what the core alone costs. "
   + "Score (out of 100) = 30% speed + 70% efficiency, each as a ratio to the best app: 100 × (average speed ÷ best average speed)^0.3 × "
   + "(best energy per GB ÷ energy per GB)^0.7. Efficiency weighs more because every app near the top is already far faster than any real internet "
   + "connection. Click a column header to sort by that column instead.";
@@ -483,10 +484,13 @@ function benchScatter(sp, en, name, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], 
     const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.4 + 2, tip = `${name(a)}: ${fmtNum(sp[a])} Gbit/s average, ${fmtNum(en[a])} J per GB, score ${fmtNum(score(a))}`;
     dots += `<g class="pt"><title>${esc(tip)}</title><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
     const at = [[cx + 9, cy - 7, "start"], [cx - 9 - w, cy - 7, "end"], [cx - w / 2, cy - 22, "middle"], [cx - w / 2, cy + 8, "middle"],
-      [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"]]
+      [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"],
+      // farther out, joined to the dot by a short line
+      ...[22, 34].flatMap((d) => [[cx + 7, cy - 7 - d, "start"], [cx + 7, cy - 7 + d, "start"], [cx - 7 - w, cy - 7 - d, "end"], [cx - 7 - w, cy - 7 + d, "end"]])]
       .map(([bx, by, an]) => [[bx, by, w, 14], an]).find(([b]) => !hit(b));
     if (!at) return;
     const [[bx, by], an] = at; boxes.push(at[0]);
+    if (Math.abs(by + 7 - cy) > 15) labels += `<line class="gr" x1="${cx}" y1="${cy + (by > cy ? 5 : -5)}" x2="${an === "start" ? bx : bx + w}" y2="${by + (by > cy ? 2 : 12)}"/>`;
     labels += `<text class="lbl" x="${an === "start" ? bx : an === "end" ? bx + w : bx + w / 2}" y="${by + 11}" text-anchor="${an}">${esc(name(a))}</text>`;
   });
   return `<div class="bn-chart-wrap"><svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average speed against energy per GB for each app; the table below has every value.">
