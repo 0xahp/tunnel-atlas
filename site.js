@@ -298,6 +298,10 @@ const Picks = {
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
   streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN" };
+// where the developers are based (22 Oct 2026: company records, store listings, commit time zones); left out = unknown
+const BENCH_FLAGS = { cli: "CN", sfm: "CN", flclash: "CN", verge: "CN", v2rayn: "CN", karing: "CN", onexray: "CN", surge: "CN",
+  shadowrocket: "CN", throne: "IR", hiddify: "IR", koala: "RU", happ: "RU", incy: "RU", anywhere: "JP" };
+const BENCH_COUNTRIES = { CN: "China", IR: "Iran", RU: "Russia", JP: "Japan" };
 // core read from the Go modules inside each installed Mac app (20 Oct); license from the project's GitHub page; blank = not sure
 const BENCH_CORES = [
   ["sing-box", "Go; the SagerNet core", { sfm: ["libbox (gomobile)", "GPL-3.0"], cli: ["the core itself", "GPL-3.0 + name clause"],
@@ -358,6 +362,9 @@ const BENCH_COLS = {
     ["Idle", "Extra power", "mW", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
 };
 const benchName = (a) => BENCH_NAMES[a] || a;
+// the country code as a flag emoji, with the country name for screen readers and hover
+const benchFlag = (a) => { const c = BENCH_FLAGS[a];
+  return c ? `<span class="flag" role="img" aria-label="Developer based in ${BENCH_COUNTRIES[c]}" title="Developer based in ${BENCH_COUNTRIES[c]}">${String.fromCodePoint(...[...c].map((l) => 0x1f1a5 + l.charCodeAt(0)))}</span>` : ""; };
 // measure keys over the ranking
 const benchKey = ([g, l]) => l === "Average" ? "Speed" : g === "Speed" ? `Speed, ${l}` : g === "Idle" ? `Idle ${l.toLowerCase()}` : l;
 const Bench = {
@@ -413,7 +420,7 @@ const Bench = {
     const appCards = I ? "" : BENCH_CORES.map(([core, what, list]) => {
       const rows = byScore.filter((c) => list[c]).map((c) => {
         const [detail, lic, stack] = list[c];
-        return `<li><b>${esc(benchName(c))}</b> <span class="v">${esc(this.ver(c))}</span>${detail ? `<span>${esc(detail)}</span>` : ""}
+        return `<li><b>${esc(benchName(c))}</b>${benchFlag(c)} <span class="v">${esc(this.ver(c))}</span>${detail ? `<span>${esc(detail)}</span>` : ""}
           ${stack ? `<span>IP stack: ${esc(stack)}</span>` : ""}${lic ? `<span class="lic">${esc(lic)}</span>` : ""}</li>`;
       }).join("");
       return rows ? `<div class="core"><h4>${esc(core)} <span>${esc(what)}</span></h4><ul>${rows}</ul></div>` : "";
@@ -472,7 +479,7 @@ const Bench = {
       const all = cols.map((c) => { const [, , u, ca, me, sc] = c, w = this.stats(ca, me)[a];
         return `<div class="${this.flag(c, a)}"><dt>${esc(benchKey(c))} <span>${esc(u)}</span></dt><dd title="${esc(range(c, a))}">${w ? fmtNum(w.median * sc) : "–"}</dd></div>`; }).join("");
       return `<li style="--i:${i}"><details class="rr" data-app="${a}"><summary>
-        <span class="rr-n">${i + 1}</span><span class="rr-name"><b>${esc(benchName(a))}</b><span class="rr-meta">${this.meta(a)}</span></span>
+        <span class="rr-n">${i + 1}</span><span class="rr-name"><b>${esc(benchName(a))}</b>${benchFlag(a)}<span class="rr-meta">${this.meta(a)}</span></span>
         <span class="rr-v ${f || ""}" title="${esc(range(col, a))}">${v ? fmtNum(v.median * sc0) : "–"}</span>
         <span class="rr-bar" aria-hidden="true">${bar}</span></summary>
         <dl class="rr-all">${all}</dl></details></li>`;
@@ -495,7 +502,7 @@ const Bench = {
     this.cur = a;
     document.querySelectorAll("#bn-chart .pt, #bn-rank .rr").forEach((p) => p.classList.toggle("on", p.dataset.app === a));
     const sc = this.stats("lab", "score")[a];
-    $("#bn-readout").innerHTML = `<b>${esc(benchName(a))}</b><span>${fmtNum(this.sp[a])} Gbit/s average</span><span>${fmtNum(this.en[a])} J per GB</span>${sc ? `<span>score ${fmtNum(sc.median)}</span>` : ""}`;
+    $("#bn-readout").innerHTML = `<b>${esc(benchName(a))} ${benchFlag(a)}</b><span>${fmtNum(this.sp[a])} Gbit/s average</span><span>${fmtNum(this.en[a])} J per GB</span>${sc ? `<span>score ${fmtNum(sc.median)}</span>` : ""}`;
   }
 };
 // lab chart: speed (up) against energy per GB (right = less), both log scales. The score's equal-score lines are straight here.
