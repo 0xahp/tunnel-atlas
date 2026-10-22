@@ -400,7 +400,7 @@ const Bench = {
   ver(a) { return this.x.versions[a].replace(/\s*\(.*\)$/, ""); },
   meta(a) {
     const i = (this.x.apps || {})[a] || {};
-    return `<span>${esc(this.ver(a))}</span>${i.mtu ? `<span class="${i.mtu <= 1500 ? "m-low" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? `<span title="Also available on iPhone">iPhone</span>` : ""}`;
+    return `<span>${esc(this.ver(a))}</span>${i.mtu ? `<span class="${i.mtu <= 1500 ? "m-low" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? `<span class="m-on" title="Also available on iPhone">available on 📱</span>` : ""}`;
   },
   // "best" = best or tied with the best (ranges overlap), "worst" = worst median
   flag([, , , ca, me, , hi], a) {

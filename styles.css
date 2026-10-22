@@ -278,6 +278,7 @@ li:first-child > .rr .rr-n { color: var(--bg); background: var(--ok); }
 .rr-name b { font-weight: 600; font-size: 14px; }
 .flag { font-size: 13px; line-height: 1; margin-left: 4px; }
 .rr-name .flag { margin-left: -4px; }
+.rr-meta .m-on { font-size: 10px; }
 .rr-meta { display: inline-flex; gap: 8px; font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
 .rr-v { grid-area: v; justify-self: end; padding: 3px 6px; border-radius: 4px; font: 500 13px/1 var(--f-data); text-align: right; }
 .rr-v.best, .key.best, .rr-all .best dd { background: color-mix(in srgb, var(--ok) 24%, transparent); font-weight: 600; }
@@ -408,7 +409,7 @@ tr.lead td { font-weight: 500; }
 
 /* ---------- 768px and up: one-line ranking rows, the full table, the hop grid ---------- */
 @media (min-width: 768px) {
-  .rr summary { grid-template-columns: 24px minmax(190px, 280px) minmax(0, 1fr) 60px; grid-template-areas: "n name bar v"; gap: 12px; padding: 5px 10px; }
+  .rr summary { grid-template-columns: 24px minmax(190px, 310px) minmax(0, 1fr) 60px; grid-template-areas: "n name bar v"; gap: 12px; padding: 5px 10px; }
   .rr-n { height: 20px; }
   .rr-bar { height: 8px; border-radius: 2px; }
   .rr-bar .fill { border-radius: 2px; }
