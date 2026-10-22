@@ -297,7 +297,8 @@ const Picks = {
    Reads bench/experiments.json. The Mac and iPhone labs, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
-  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN" };
+  streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN",
+  susi: "susi connect", tunna: "Tunna", hyperorbit: "HyperOrbit" };
 // where the developers are based (22 Oct 2026: company records, store listings, commit time zones); left out = unknown
 const BENCH_FLAGS = { cli: "CN", sfm: "CN", flclash: "CN", verge: "CN", v2rayn: "CN", karing: "CN", onexray: "CN", surge: "CN",
   shadowrocket: "CN", throne: "IR", hiddify: "IR", koala: "RU", happ: "RU", incy: "RU", anywhere: "JP" };
@@ -310,7 +311,7 @@ const BENCH_CORES = [
     v2rayn: ["two processes in series: sing-box 1.14.3 TUN → Xray 26.10.10", "GPL-3.0", "mixed (as tested)"] }],
   ["mihomo", "Go; the Clash Meta core", { flclash: ["", "GPL-3.0"], verge: ["", "GPL-3.0"], koala: ["", "GPL-3.0"], clash: ["mihomo 1.19.32"],
     rabbithole: [""], clashplus: [""] }],
-  ["Xray", "Go; the XTLS core", { onexray: ["libXray", "GPL-3.0"], happ: ["libXray"], v2box: [""], incy: [""] }],
+  ["Xray", "Go; the XTLS core", { onexray: ["libXray", "GPL-3.0"], happ: ["libXray"], v2box: [""], incy: [""], susi: [""], tunna: [""], hyperorbit: [""] }],
   ["Own core", "no sing-box, Xray or mihomo inside", { anywhere: ["Swift", "GPL-3.0", "AnywhereIP (own, Swift)"], surge: [""], shadowrocket: [""],
     egern: ["", "", "own user-space stack (vendor's note, 2.15)"] }]];
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 11 Pro" };
@@ -320,19 +321,19 @@ const BENCH_CHAIN_NOTE = ["Real use costs more.", "These labs measure one proxy 
 // keep in sync with make-static.py
 const BENCH_MTU_NOTE = ["MTU changes results a lot.", "At the common 1500, an app handles about 2.7× more packets per GB than at 4000. "
   + "In our checks, raising the MTU from 1500 to 4000 lifted SFM's upload from 10.8 to about 14.3 Gbit/s (1.3×), and Karing's speed from 0.9 to 2.4 Gbit/s "
-  + "(2.5×, with its stack also changed) while its CPU time per GB fell by about a fifth. On the Mac, the six apps stuck at 1500 are the six slowest. "
+  + "(2.5×, with its stack also changed) while its CPU time per GB fell by about a fifth. On the Mac, the seven apps at 1500 or below are all among the nine slowest. "
   + "We set 4000 wherever an app allows it."];
 // keep in sync with make-static.py
 const BENCH_LAB_METHOD = [
-  "MacBook Air M1, macOS 27.0.1, on battery, screen off, no app windows open. Every app ran in TUN mode with the same Shadowsocks 2022 profile "
+  "MacBook Air M1, macOS 27.0.1 (susi connect, HyperOrbit and Tunna: macOS 26.7.1), on battery, screen off, no app windows open. Every app ran in TUN mode with the same Shadowsocks 2022 profile "
   + "(2022-blake3-aes-128-gcm) to a sing-box server on the same Mac; iperf3 3.22 drove the traffic. A script ran the apps one at a time over two rounds, "
   + "the second in reverse order. Speed: 5 s after a 2 s warm-up, over 1 and 4 connections. Efficiency: a steady 200 Mbit/s download for 20 s, with the "
   + "energy, CPU time and memory of the app's tunnel process. Each test confirmed its traffic went through the tunnel; any test with keyboard or trackpad "
-  + "input was repeated. The sing-box command line is included as a baseline for the core alone. Versions as installed on 20–21 Oct 2026.",
+  + "input was repeated. The sing-box command line is included as a baseline for the core alone. Versions as installed on 20–22 Oct 2026.",
   "MTU is as macOS reported it (4000 requested where possible). Score = 100 × (speed ÷ best speed)^0.3 × (best energy per GB ÷ energy per GB)^0.7: efficiency weighs more because the top apps are already far faster "
   + "than any internet connection.",
   "Exceptions: Karing used its mixed stack. Happ ignores its MTU setting on the Mac. Hiddify 5.0.0 (a development build) ran as root with its fixed MTU of 9000. "
-  + "v2rayN chains two cores (sing-box, then Xray). Karing's 4-connection download and v2rayN's 1-connection upload are from one round."];
+  + "v2rayN chains two cores (sing-box, then Xray). Karing's 4-connection download and v2rayN's 1-connection upload are from one round. Tunna closes any connection idle for 10 s, which cut the test's own control connection, so we raised that limit to 300 s for its test."];
 // keep in sync with make-static.py
 const BENCH_IPHONE_METHOD = [
   "iPhone 11 Pro, iOS 27.0.1, on the USB cable at full charge, run overnight by an automated test with nobody touching it. A test app on the phone runs "
