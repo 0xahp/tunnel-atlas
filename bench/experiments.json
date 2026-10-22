@@ -7655,7 +7655,7 @@
    "mac": "MacBookAir10,1",
    "versions": {
     "cli": "1.15.0-alpha.12",
-    "throne": "0.1",
+    "throne": "1.4.0-beta.3",
     "sfm": "1.15.0-alpha.12",
     "anywhere": "2.4",
     "egern": "2.20.0",
