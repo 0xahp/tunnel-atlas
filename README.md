@@ -1,6 +1,6 @@
 # Tunnel Atlas
 
-**Which proxy client app is fastest and lightest on the battery?** A benchmark of 24 apps on a Mac and 6 on an iPhone (October 2026), plus a field guide to VPN and proxy protocols.
+**Which proxy client app is fastest and lightest on the battery?** A benchmark of 24 apps on a Mac and 7 on an iPhone (October 2026), plus a field guide to VPN and proxy protocols.
 
 **Live site: https://0xahp.github.io/tunnel-atlas/**
 
@@ -20,7 +20,7 @@ Each app tunnels identical traffic, one at a time, to a Shadowsocks 2022 test se
 *Mac lab (MacBook Air M1, 2 rounds). Energy is macOS's own figure for each app's tunnel process. The full ranking scores 30% speed and 70% efficiency.*
 
 - **Mac lab** (MacBook Air M1, macOS 27; 3 apps on macOS 26.7): 23 apps plus the sing-box command line, 2 rounds. Throne, the sing-box command line and SFM score highest; Egern uses the least energy per GB.
-- **iPhone lab** (iPhone 11 Pro, iOS 27): 6 apps, 3 rounds, run overnight with nobody touching the phone. Egern leads on efficiency; Anywhere is the fastest.
+- **iPhone lab** (iPhone 11 Pro, iOS 27): 7 apps, 3 rounds (sing-box: 1 round, added 22 Oct), run with nobody touching the phone. Egern leads on efficiency; Anywhere is the fastest.
 - **MTU changes results a lot:** at the common 1500, an app handles about 2.7× more packets per GB than at 4000. In our checks, raising it from 1500 to 4000 lifted SFM's upload from 10.8 to about 14.3 Gbit/s (1.3×) and Karing's speed from 0.9 to 2.4 Gbit/s (2.5×, with its stack also changed). On the Mac, the seven apps at 1500 or below are all among the nine slowest.
 - **Real use costs more:** in an earlier test through real servers, two chained proxies with routing rules used about 3× the energy per GB of a single proxy.
 

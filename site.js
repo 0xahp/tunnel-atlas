@@ -298,14 +298,14 @@ const Picks = {
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
   streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN",
-  susi: "susi connect", tunna: "Tunna", hyperorbit: "HyperOrbit" };
+  susi: "susi connect", tunna: "Tunna", hyperorbit: "HyperOrbit", singbox: "sing-box (SFI)" };
 // where the developers are based (22 Oct 2026: company records, store listings, commit time zones); left out = unknown
-const BENCH_FLAGS = { cli: "CN", sfm: "CN", flclash: "CN", verge: "CN", v2rayn: "CN", karing: "CN", onexray: "CN", surge: "CN",
+const BENCH_FLAGS = { cli: "CN", sfm: "CN", singbox: "CN", flclash: "CN", verge: "CN", v2rayn: "CN", karing: "CN", onexray: "CN", surge: "CN",
   shadowrocket: "CN", throne: "IR", hiddify: "IR", koala: "RU", happ: "RU", incy: "RU", anywhere: "JP" };
 const BENCH_COUNTRIES = { CN: "China", IR: "Iran", RU: "Russia", JP: "Japan" };
 // core read from the Go modules inside each installed Mac app (20 Oct); license from the project's GitHub page; blank = not sure
 const BENCH_CORES = [
-  ["sing-box", "Go; the SagerNet core", { sfm: ["libbox (gomobile)", "GPL-3.0"], cli: ["the core itself", "GPL-3.0 + name clause"],
+  ["sing-box", "Go; the SagerNet core", { sfm: ["libbox (gomobile)", "GPL-3.0"], singbox: ["libbox (gomobile), iPhone app", "GPL-3.0"], cli: ["the core itself", "GPL-3.0 + name clause"],
     karing: ["LibVpnCore", "GPL-3.0 + name clause", "mixed (as tested)"], hiddify: ["hiddify-core (sing-box 1.13.0)", "", "mixed (as tested)"] }],
   ["sing-box and Xray", "both cores built in", { throne: ["ThroneCore, a separate process", "GPL-3.0"], streisand: ["sing-box 1.14 + Xray"],
     v2rayn: ["two processes in series: sing-box 1.14.3 TUN → Xray 26.10.10", "GPL-3.0", "mixed (as tested)"] }],
@@ -343,7 +343,8 @@ const BENCH_IPHONE_METHOD = [
   "Power is the whole phone's, from its battery gauge; \"extra\" subtracts the same test without a VPN (0.68 W under load, 0.65 W idle). "
   + "Energy per GB uses the speed actually held (Happ reached only 130 Mbit/s, V2Box 180). CPU and memory are the tunnel process's own. "
   + "Idle power differences are mostly within noise (±0.07 W); wakeups show how often the tunnel woke the processor. Same score formula as the Mac lab.",
-  "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds."];
+  "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds.",
+  "sing-box (SFI) 1.14.7 was added on 22 Oct from one round, against no-VPN steps in the same session (0.83 W under load, 0.78 W idle). An Egern round in that session matched its earlier figures: speed within 2%, the same CPU, wakeups and memory, 0.06 W extra. Its profile sends apple.com traffic direct, so iOS could check the test app while the VPN was on."];
 const BENCH_SETUPS = {
   L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); pick a measure to rank by it."],
   I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); pick a measure to rank by it."]
