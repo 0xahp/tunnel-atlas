@@ -471,12 +471,12 @@ const Bench = {
       const i0 = (this.x.apps || {})[a] || {}, c = BENCH_FLAGS[a];
       // app info as label/value rows; numbers (version, MTU) in the data font
       const info = [["Version", `<span class="num">${esc(this.ver(a))}</span>`], ["MTU", i0.mtu ? `<span class="num" title="Tunnel packet size">${i0.mtu}</span>` : ""],
-        ["Developer", c ? `${benchFlag(a)} ${BENCH_COUNTRIES[c]}` : ""], ["Also on", i0.iphone ? "iPhone 📱" : ""]]
+        ["Developer", c ? `${benchFlag(a)} ${BENCH_COUNTRIES[c]}` : ""]]
         .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
       const rest = cols.filter((_, j) => !head.includes(j)).map((k) =>
         `<div class="${this.flag(k, a)}"><dt>${esc(benchKey(k))}<span>${esc(k[2])}</span></dt><dd title="${esc(range(k, a))}">${val(k, a)}</dd></div>`).join("");
       return `<li><details class="rr" data-app="${a}"><summary>
-        <span class="rr-name"><span class="rr-n">${i + 1}</span><b>${esc(benchName(a))}</b></span>
+        <span class="rr-name"><span class="rr-n">${i + 1}</span><span class="rr-t"><b>${esc(benchName(a))}</b>${i0.iphone ? ` <small class="rr-on" title="Also available on iPhone">also on 📱</small>` : ""}</span></span>
         ${head.map((j) => `<span class="rr-v ${this.flag(cols[j], a)}${j === si ? " on" : ""}" title="${esc(range(cols[j], a))}">${val(cols[j], a)}</span>`).join("")}</summary>
         <div class="rr-more"><dl class="rr-info">${info}</dl><dl class="rr-all">${rest}</dl></div></details></li>`;
     }).join("");

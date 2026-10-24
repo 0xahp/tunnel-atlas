@@ -277,6 +277,9 @@ h1 { font-size: 24px; line-height: 1.2; font-weight: 500; letter-spacing: -0.015
 .rr[open] { border-color: color-mix(in srgb, var(--accent) 55%, var(--rule)); }
 .rr-name { min-width: 0; display: flex; align-items: baseline; gap: 6px; }
 .rr-name b { font-weight: 600; font-size: 14px; line-height: 1.25; }
+.rr-t { line-height: 1.25; }
+/* "also on 📱": its own line on phones, beside the name from 640px */
+.rr-on { display: block; font-size: 10.5px; color: var(--muted); white-space: nowrap; }
 .rr-n { flex: none; min-width: 16px; font: 500 11.5px/1 var(--f-data); color: var(--muted); }
 li:first-child > .rr .rr-n { color: var(--ok); font-weight: 600; }
 .flag { font-size: 13px; line-height: 1; margin-left: 4px; }
@@ -399,6 +402,7 @@ tr.lead td { font-weight: 500; }
   .flow-head { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; }
   .rr-more { grid-template-columns: minmax(170px, 210px) minmax(0, 1fr); gap: 20px; }
   .rr-all { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rr-on { display: inline; margin-left: 4px; }
   .doc { padding: 44px 24px 80px; gap: 52px; }
   .ref { grid-template-columns: 36px minmax(0, 1fr) auto; }
   .ref-host { grid-column: auto; max-width: 260px; }
