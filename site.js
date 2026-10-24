@@ -388,11 +388,17 @@ const Bench = {
     body.addEventListener("click", (e) => {
       const b = e.target.closest(".rr-head button");
       if (b) { this.sort = +b.dataset.i; this.ranked(); return; }
+      // a tap or click on a dot pins its popup; a second tap or a tap elsewhere closes it
       const p = e.target.closest(".pt");
-      if (p) this.pick(p.dataset.app);
+      if (p) { this.pinned = this.pinned === p.dataset.app ? null : p.dataset.app; this.pop(this.pinned); return; }
+      if (this.pinned && !e.target.closest(".bn-pop")) { this.pinned = null; this.pop(null); }
     });
-    // the chart readout follows the pointer over dots and ranking rows, and keyboard focus
-    const follow = (e) => { const t = e.target.closest("[data-app]"); if (t && t.dataset.app !== this.cur) this.pick(t.dataset.app); };
+    // with a mouse, the popup also shows while the pointer is over a dot
+    body.addEventListener("pointerover", (e) => { const p = e.target.closest(".pt"); if (p && e.pointerType === "mouse" && !this.pinned) this.pop(p.dataset.app); });
+    body.addEventListener("pointerout", (e) => { const p = e.target.closest(".pt"); if (p && e.pointerType === "mouse" && !this.pinned) this.pop(null); });
+    addEventListener("keydown", (e) => { if (e.key === "Escape" && this.pinned) { this.pinned = null; this.pop(null); } });
+    // a ranking row under the pointer or keyboard focus rings its dot
+    const follow = (e) => { const t = e.target.closest(".rr"); if (t && t.dataset.app !== this.cur) this.pick(t.dataset.app); };
     body.addEventListener("mouseover", follow);
     body.addEventListener("focusin", follow);
     addEventListener("resize", () => { const c = $("#bn-chart"); if (c && !$("#bench").hidden && c.clientWidth !== this.cw) this.chart(); });
@@ -414,7 +420,7 @@ const Bench = {
     const x = this.x = this.data.experiments.find((e) => e.id === this.exp), I = this.exp === "I";
     const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
     const score = this.stats("lab", "score"), byScore = Object.keys(x.versions).sort((p, q) => (score[q] || { median: -1 }).median - (score[p] || { median: -1 }).median);
-    this.cur = byScore[0];
+    this.cur = null;
     const appCards = I ? "" : BENCH_CORES.map(([core, what, list]) => {
       const rows = byScore.filter((c) => list[c]).map((c) => {
         const [detail, lic, stack] = list[c];
@@ -438,8 +444,9 @@ const Bench = {
           <p class="screen-note">Tap a column to rank by it; tap an app for its other numbers.</p>
           <div class="rr-head" role="group" aria-label="Rank by"></div><ol class="ranked" id="bn-rank"></ol></section>
         <section class="screen bn-chart-screen" aria-labelledby="bn-chart-h"><div class="screen-head"><h3 id="bn-chart-h">Speed against efficiency</h3></div>
-          <div id="bn-chart"></div><p class="bn-readout" id="bn-readout" aria-live="polite"></p>
-          <p class="note">Top right is best. Dashed lines connect equal scores. Hover or tap a dot to read its numbers.</p></section>
+          <div id="bn-chart"></div>
+          <p class="bn-key">${[["b1", "75 and up"], ["b2", "50–75"], ["b3", "25–50"], ["b4", "under 25"]].map(([c, t]) => `<span><i class="${c}"></i>score ${t}</span>`).join("")}</p>
+          <p class="note">Top right is best. Hover or tap a dot for its numbers.</p></section>
       </div>
       <p class="note">Values are medians over all rounds; hover one for its range.
         <span class="key best">Green</span> = best or tied with the best (ranges overlap). ${powerNote}</p>
@@ -488,51 +495,56 @@ const Bench = {
     this.sp = med(this.stats("speed", "gbps_avg"));
     this.en = med(this.stats("down_200", I ? "phone_energy_per_gb" : "tunnel_energy_per_gb"));
     this.cw = box.clientWidth;
-    box.innerHTML = benchScatter(this.sp, this.en, benchName, Math.max(300, this.cw), ...(I ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []));
+    box.innerHTML = benchScatter(this.sp, this.en, med(this.stats("lab", "score")), benchName, Math.max(300, this.cw), ...(I ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []))
+      + `<div class="bn-pop" id="bn-pop" role="dialog" aria-live="polite" hidden></div>`;
+    this.pinned = null;
     this.pick(this.cur);
   },
-  // the readout under the chart: one app's numbers, its dot ringed
+  // ring one app's dot (and mark its ranking card)
   pick(a) {
-    if (this.sp[a] == null || this.en[a] == null) return;
     this.cur = a;
     document.querySelectorAll("#bn-chart .pt, #bn-rank .rr").forEach((p) => p.classList.toggle("on", p.dataset.app === a));
-    const sc = this.stats("lab", "score")[a];
-    $("#bn-readout").innerHTML = `<b>${esc(benchName(a))} ${benchFlag(a)}</b><span>${fmtNum(this.sp[a])} Gbit/s average</span><span>${fmtNum(this.en[a])} J per GB</span>${sc ? `<span>score ${fmtNum(sc.median)}</span>` : ""}`;
+  },
+  // the popup next to a dot: the app's info and all its numbers, compact
+  pop(a) {
+    const box = $("#bn-chart"), p = $("#bn-pop"), dot = a && box.querySelector(`.pt[data-app="${a}"] .dot`);
+    if (!dot) { p.hidden = true; this.pick(null); return; }
+    this.pick(a);
+    const i0 = (this.x.apps || {})[a] || {}, info = [this.ver(a), i0.mtu ? `MTU ${i0.mtu}` : "", i0.iphone ? "also on 📱" : ""].filter(Boolean);
+    p.innerHTML = `<p class="bn-pop-h"><b>${esc(benchName(a))}</b>${benchFlag(a)}</p><p class="bn-pop-info">${info.map(esc).join(" · ")}</p>
+      <dl>${BENCH_COLS[this.exp].map((c) => { const w = this.stats(c[3], c[4])[a];
+        return `<div class="${this.flag(c, a)}"><dt>${esc(benchKey(c))}</dt><dd>${w ? fmtNum(w.median * c[5]) : "–"}<span>${esc(c[2].replace(/^down, /, "").replace(" per ", "/"))}</span></dd></div>`; }).join("")}</dl>`;
+    p.hidden = false;
+    // right of the dot if it fits, else left; kept inside the chart
+    const b = box.getBoundingClientRect(), d = dot.getBoundingClientRect(), x = d.left - b.left + d.width / 2, y = d.top - b.top + d.height / 2;
+    const pw = p.offsetWidth, ph = p.offsetHeight;
+    const left = x + 14 + pw <= b.width ? x + 14 : x - 14 - pw;
+    p.style.left = Math.max(0, Math.min(left, b.width - pw)) + "px";
+    p.style.top = Math.max(0, Math.min(y - ph / 2, b.height - ph)) + "px";
   }
 };
-// lab chart: speed (up) against energy per GB (right = less), both log scales. The score's equal-score lines are straight here.
-function benchScatter(sp, en, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s") {
+// lab chart: speed (up) against energy per GB (right = less), both log scales; a darker dot = a higher score
+function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s") {
   const H = Math.round(W * (W < 420 ? 1.08 : W < 640 ? 0.85 : W < 900 ? 0.62 : 0.4)), L = 46, R = 12, T = 12, B = 44;
   const apps = Object.keys(sp).filter((a) => en[a]);
   const lg = Math.log10, X = (e) => L + (lg(e1) - lg(e)) / (lg(e1) - lg(e0)) * (W - L - R), Y = (s) => T + (lg(s1) - lg(s)) / (lg(s1) - lg(s0)) * (H - T - B);
-  const spMax = Math.max(...apps.map((a) => sp[a])), enMin = Math.min(...apps.map((a) => en[a]));
-  const score = (a) => 100 * (sp[a] / spMax) ** 0.3 * (enMin / en[a]) ** 0.7;
-  const tk = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100], ex = tk.filter((v) => v >= e0 && v < e1), sx = tk.filter((v) => v >= s0 && v < s1);
+  const score = (a) => sc[a] || 0, band = (a) => score(a) >= 75 ? "b1" : score(a) >= 50 ? "b2" : score(a) >= 25 ? "b3" : "b4";
+  const tk = [0.1, 0.3, 1, 3, 10, 30, 100], ex = tk.filter((v) => v >= e0 && v < e1), sx = tk.filter((v) => v >= s0 && v < s1);
   let g = ex.map((v) => `<line class="gr" x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${H - B}"/><text class="ax" x="${X(v)}" y="${H - B + 16}" text-anchor="middle">${v}</text>`).join("")
     + sx.map((v) => `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${L - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("");
-  // equal-score lines: speed = spMax * (S/100 / (enMin/e)^0.7)^(1/0.3)
-  [10, 25, 50, 75].forEach((S) => {
-    const s = (e) => spMax * ((S / 100) / (enMin / e) ** 0.7) ** (1 / 0.3), pts = [];
-    for (let k = 0; k <= 60; k++) { const e = 10 ** (lg(e0) + k / 60 * (lg(e1) - lg(e0))), v = s(e); if (v >= s0 && v <= s1) pts.push([X(e), Y(v)]); }
-    if (pts.length < 2) return;
-    const [top, low] = pts[0][1] < pts[pts.length - 1][1] ? [pts[0], pts[pts.length - 1]] : [pts[pts.length - 1], pts[0]];
-    // label at the top end, or at the lower end when the top end is against the speed axis
-    const t = top[0] - 4 > L + 50 ? `x="${top[0] - 4}" y="${top[1] + 12}" text-anchor="end"` : `x="${low[0] + 4}" y="${low[1] - 4}" text-anchor="start"`;
-    g += `<polyline class="iso" points="${pts.map((q) => q.join(",")).join(" ")}"/><text class="iso-t" ${t}>score ${S}</text>`;
-  });
-  // labels: best score first; try right, left, above, below, then the corners; skip if nothing fits (the readout and ranking still name it)
+  // labels for the top 5 only: try right, left, above, below, then the corners; skip if nothing fits (the popup and ranking still name it)
   const boxes = apps.map((a) => [X(en[a]) - 7, Y(sp[a]) - 7, 14, 14]);
   const hit = (b) => b[0] < L || b[0] + b[2] > W - R || b[1] < T || b[1] + b[3] > H - B
     || boxes.some((c) => b[0] < c[0] + c[2] && c[0] < b[0] + b[2] && b[1] < c[1] + c[3] && c[1] < b[1] + b[3]);
   let dots = "", labels = "";
-  apps.sort((p, q) => score(q) - score(p)).forEach((a) => {
+  apps.sort((p, q) => score(q) - score(p)).forEach((a, i) => {
     const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.6 + 2;
-    dots += `<g class="pt" data-app="${esc(a)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
+    dots += `<g class="pt ${band(a)}" data-app="${esc(a)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
     const at = [[cx + 9, cy - 7, "start"], [cx - 9 - w, cy - 7, "end"], [cx - w / 2, cy - 22, "middle"], [cx - w / 2, cy + 8, "middle"],
       [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"],
       // farther out, joined to the dot by a short line
       ...[22, 34].flatMap((d) => [[cx + 7, cy - 7 - d, "start"], [cx + 7, cy - 7 + d, "start"], [cx - 7 - w, cy - 7 - d, "end"], [cx - 7 - w, cy - 7 + d, "end"]])]
-      .map(([bx, by, an]) => [[bx, by, w, 14], an]).find(([b]) => !hit(b));
+      .map(([bx, by, an]) => [[bx, by, w, 14], an]).find(([b]) => i < 5 && !hit(b));
     if (!at) return;
     const [[bx, by], an] = at; boxes.push(at[0]);
     if (Math.abs(by + 7 - cy) > 15) labels += `<line class="gr lead" x1="${cx}" y1="${cy + (by > cy ? 5 : -5)}" x2="${an === "start" ? bx : bx + w}" y2="${by + (by > cy ? 2 : 12)}"/>`;

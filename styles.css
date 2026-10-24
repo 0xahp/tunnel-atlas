@@ -302,9 +302,25 @@ li:first-child > .rr .rr-n { color: var(--ok); font-weight: 600; }
 .rr-all dt span { display: block; font-weight: 400; font-size: 11px; color: var(--muted); }
 .rr-all dd { justify-self: start; align-self: end; margin: 0 0 0 -4px; padding: 2px 4px; border-radius: 4px; font: 500 14.5px/1.2 var(--f-data); }
 
-/* chart readout: the app under the cursor */
-.bn-readout { margin: 0 14px; padding: 10px 0 0; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13.5px; line-height: 1.4; font-variant-numeric: tabular-nums; color: var(--ink-2); min-height: 2.6em; }
-.bn-readout b { font: 600 14px/1.4 var(--f-body); color: var(--ink); }
+/* chart: score key under it, popup next to a dot */
+#bn-chart { position: relative; }
+.bn-key { margin: 0 14px; padding: 10px 0 0; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--muted); }
+.bn-key span { display: inline-flex; align-items: center; gap: 6px; }
+.bn-key i { width: 9px; height: 9px; border-radius: 50%; }
+.bn-key .b1 { background: var(--accent); }
+.bn-key .b2 { background: color-mix(in srgb, var(--accent) 70%, transparent); }
+.bn-key .b3 { background: color-mix(in srgb, var(--accent) 42%, transparent); }
+.bn-key .b4 { box-sizing: border-box; border: 1.5px solid var(--muted); }
+.bn-pop { position: absolute; z-index: 3; width: 228px; padding: 10px 12px 11px; background: var(--screen); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); font-size: 12.5px; }
+.bn-pop p { margin: 0; }
+.bn-pop-h b { font-weight: 600; font-size: 14px; }
+.bn-pop-info { margin: 2px 0 8px !important; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.bn-pop dl { margin: 0; padding-top: 8px; border-top: 1px solid var(--grid); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; }
+.bn-pop dl div { display: contents; }
+.bn-pop dt { color: var(--ink-2); white-space: nowrap; }
+.bn-pop dd { margin: 0; justify-self: end; padding: 0 4px; border-radius: 4px; font: 500 12.5px/1.45 var(--f-data); }
+.bn-pop dd span { margin-left: 5px; font: 400 11px var(--f-body); color: var(--muted); }
+.bn-pop .best dd { background: color-mix(in srgb, var(--ok) 24%, transparent); font-weight: 600; }
 .bn-chart-screen .note { margin: 6px 14px 14px; }
 
 .table-wrap { overflow-x: auto; }
@@ -331,9 +347,10 @@ tr.lead td { font-weight: 500; }
 .bn-chart .gr.lead { stroke: var(--muted); }
 .bn-chart .ax { fill: var(--muted); font: 11px var(--f-data); }
 .bn-chart .ax-t { fill: var(--muted); font: 12px var(--f-body); }
-.bn-chart .iso { fill: none; stroke: var(--unk); stroke-width: 1; opacity: .7; }
-.bn-chart .iso-t { fill: var(--muted); font: 10.5px var(--f-body); }
 .bn-chart .dot { fill: var(--accent); stroke: var(--screen); stroke-width: 2; }
+.bn-chart .b2 .dot { fill-opacity: .7; }
+.bn-chart .b3 .dot { fill-opacity: .42; }
+.bn-chart .b4 .dot { fill: var(--screen); stroke: var(--muted); stroke-width: 1.5; }
 .bn-chart .hit { fill: transparent; }
 .bn-chart .pt { cursor: pointer; }
 .bn-chart .pt.on .dot { r: 6; }
