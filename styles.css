@@ -317,8 +317,8 @@ li:first-child > .rr .rr-n { color: var(--ok); font-weight: 600; }
 .bn-pop-info { margin: 2px 0 8px !important; font-size: 12px; line-height: 1.4; color: var(--muted); }
 .bn-pop dl { margin: 0; padding-top: 8px; border-top: 1px solid var(--grid); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; }
 .bn-pop dl div { display: contents; }
-.bn-pop dt { color: var(--ink-2); white-space: nowrap; }
-.bn-pop dd { margin: 0; justify-self: end; padding: 0 4px; border-radius: 4px; font: 500 12.5px/1.45 var(--f-data); }
+.bn-pop dt { color: var(--ink-2); }
+.bn-pop dd { margin: 0; justify-self: end; align-self: start; white-space: nowrap; padding: 0 4px; border-radius: 4px; font: 500 12.5px/1.45 var(--f-data); }
 .bn-pop dd span { margin-left: 5px; font: 400 11px var(--f-body); color: var(--muted); }
 .bn-pop .best dd { background: color-mix(in srgb, var(--ok) 24%, transparent); font-weight: 600; }
 .bn-chart-screen .note { margin: 6px 14px 14px; }
