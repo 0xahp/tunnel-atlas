@@ -346,8 +346,8 @@ const BENCH_IPHONE_METHOD = [
   "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds.",
   "sing-box (SFI) 1.14.7 was added on 22 Oct from one round, against no-VPN steps in the same session (0.83 W under load, 0.78 W idle). An Egern round in that session matched its earlier figures: speed within 2%, the same CPU, wakeups and memory, 0.06 W extra. Its profile sends apple.com traffic direct, so iOS could check the test app while the VPN was on."];
 const BENCH_SETUPS = {
-  L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); pick a measure to rank by it."],
-  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); pick a measure to rank by it."]
+  L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."],
+  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."]
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
 const BENCH_COLS = {
@@ -367,7 +367,7 @@ const benchName = (a) => BENCH_NAMES[a] || a;
 // the country code as a flag emoji, with the country name for screen readers and hover
 const benchFlag = (a) => { const c = BENCH_FLAGS[a];
   return c ? `<span class="flag" role="img" aria-label="Developer based in ${BENCH_COUNTRIES[c]}" title="Developer based in ${BENCH_COUNTRIES[c]}">${String.fromCodePoint(...[...c].map((l) => 0x1f1a5 + l.charCodeAt(0)))}</span>` : ""; };
-// measure keys over the ranking
+// column names over the ranking
 const benchKey = ([g, l]) => l === "Average" ? "Speed" : g === "Speed" ? `Speed, ${l}` : g === "Idle" ? `Idle ${l.toLowerCase()}` : l;
 const Bench = {
   exp: "L",
@@ -386,7 +386,7 @@ const Bench = {
     $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = 0; this.render(); } });
     const body = $("#bn-body");
     body.addEventListener("click", (e) => {
-      const b = e.target.closest(".meas button");
+      const b = e.target.closest(".rr-head button");
       if (b) { this.sort = +b.dataset.i; this.ranked(); return; }
       const p = e.target.closest(".pt");
       if (p) this.pick(p.dataset.app);
@@ -400,10 +400,6 @@ const Bench = {
   },
   stats(ca, me) { return (this.x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {}; },
   ver(a) { return this.x.versions[a].replace(/\s*\(.*\)$/, ""); },
-  meta(a) {
-    const i = (this.x.apps || {})[a] || {};
-    return `<span>${esc(this.ver(a))}</span>${i.mtu ? `<span class="${i.mtu <= 1500 ? "m-low" : ""}" title="Tunnel packet size (MTU)">MTU ${i.mtu}</span>` : ""}${i.iphone ? `<span class="m-on" title="Also available on iPhone">available on 📱</span>` : ""}`;
-  },
   // "best" = best or tied with the best (ranges overlap), "worst" = worst median
   flag([, , , ca, me, , hi], a) {
     const s = this.stats(ca, me), v = s[a];
@@ -439,13 +435,13 @@ const Bench = {
           <div><dt>Apps</dt><dd>${byScore.length}</dd></div></dl></div>
       <div class="bn-duo">
         <section class="screen bn-rank-screen" aria-labelledby="bn-rank-h"><div class="screen-head"><h3 id="bn-rank-h">Ranking</h3></div>
-          <div class="meas" role="radiogroup" aria-label="Rank by"></div><p class="screen-note" id="bn-rank-note"></p>
-          <ol class="ranked" id="bn-rank"></ol></section>
+          <p class="screen-note">Tap a column to rank by it; tap an app for its other numbers.</p>
+          <div class="rr-head" role="group" aria-label="Rank by"></div><ol class="ranked" id="bn-rank"></ol></section>
         <section class="screen bn-chart-screen" aria-labelledby="bn-chart-h"><div class="screen-head"><h3 id="bn-chart-h">Speed against efficiency</h3></div>
           <div id="bn-chart"></div><p class="bn-readout" id="bn-readout" aria-live="polite"></p>
           <p class="note">Top right is best. Dashed lines connect equal scores. Hover or tap a dot to read its numbers.</p></section>
       </div>
-      <p class="note">Values are medians over all rounds; hover one for its range. Tap an app in the ranking for all its numbers.
+      <p class="note">Values are medians over all rounds; hover one for its range.
         <span class="key best">Green</span> = best or tied with the best (ranges overlap). ${powerNote}</p>
       <div class="bn-callouts">${[BENCH_CHAIN_NOTE, BENCH_MTU_NOTE].map(([h, t]) => `<p class="bn-callout"><b>${esc(h)}</b> ${esc(t)}</p>`).join("")}</div>
       <div class="bn-block"><h3>How we tested</h3>${(I ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD).map((t) => `<p class="note">${esc(t)}</p>`).join("")}</div>
@@ -458,35 +454,32 @@ const Bench = {
     this.ranked();
     this.chart();
   },
-  // the ranking, best first by the chosen measure
+  // the ranking: one card per app with score, speed and energy; tap it for the app's details and other numbers
   ranked() {
-    const cols = BENCH_COLS[this.exp], si = this.sort, col = cols[si], [, , unit, ca0, me0, sc0, hi0] = col;
+    const cols = BENCH_COLS[this.exp], head = [0, 1, cols.findIndex((c) => /energy_per_gb/.test(c[4]))];
+    const si = this.sort, col = cols[si], [, , , ca0, me0, , hi0] = col;
     const s = this.stats(ca0, me0);
     const m0 = (a) => (s[a] || { median: hi0 ? -Infinity : Infinity }).median;
     const apps = Object.keys(this.x.versions).sort((p, q) => hi0 ? m0(q) - m0(p) : m0(p) - m0(q));
-    // bar length: the value as a share of the largest one, so a lower value always draws a shorter bar
-    const top = Math.max(...Object.values(s).map((y) => y.max));
-    const frac = (v) => v / top, pct = (f) => (100 * f).toFixed(2);
     const range = (c, a) => { const [, , u, ca, me, sc] = c, v = this.stats(ca, me)[a];
       return v && v.n > 1 ? `median ${fmtNum(v.median * sc)}, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} ${u} over ${v.n} rounds` : ""; };
+    const val = (c, a) => { const w = this.stats(c[3], c[4])[a]; return w ? fmtNum(w.median * c[5]) : "–"; };
 
-    $(".meas").innerHTML = cols.map((c, j) => `<button type="button" role="radio" aria-checked="${j === si}" data-i="${j}">${esc(benchKey(c))}</button>`).join("");
-    $("#bn-rank-note").textContent = `${unit[0].toUpperCase() + unit.slice(1)}, ${hi0 ? "higher" : "lower"} is better. `
-      + "Bar length is the value; the thin bracket is the range over rounds.";
+    $(".rr-head").innerHTML = `<span>App</span>` + head.map((j) => `<button type="button" data-i="${j}" aria-pressed="${j === si}">${esc(benchKey(cols[j]))}<small>${esc(cols[j][2].replace(" per ", "/"))}</small></button>`).join("");
     const ol = $("#bn-rank");
-    ol.classList.remove("drawn");
     ol.innerHTML = apps.map((a, i) => {
-      const v = s[a], f = v && this.flag(col, a);
-      const bar = v ? `<i class="fill" style="--w:${frac(v.median).toFixed(4)}"></i>${v.n > 1 ? `<i class="rng" style="left:${pct(Math.min(frac(v.min), frac(v.max)))}%;width:${pct(Math.abs(frac(v.max) - frac(v.min)))}%"></i>` : ""}` : "";
-      const all = cols.map((c) => { const [, , u, ca, me, sc] = c, w = this.stats(ca, me)[a];
-        return `<div class="${this.flag(c, a)}"><dt>${esc(benchKey(c))} <span>${esc(u)}</span></dt><dd title="${esc(range(c, a))}">${w ? fmtNum(w.median * sc) : "–"}</dd></div>`; }).join("");
-      return `<li style="--i:${i}"><details class="rr" data-app="${a}"><summary>
-        <span class="rr-n">${i + 1}</span><span class="rr-name"><b>${esc(benchName(a))}</b>${benchFlag(a)}<span class="rr-meta">${this.meta(a)}</span></span>
-        <span class="rr-v ${f || ""}" title="${esc(range(col, a))}">${v ? fmtNum(v.median * sc0) : "–"}</span>
-        <span class="rr-bar" aria-hidden="true">${bar}</span></summary>
-        <dl class="rr-all">${all}</dl></details></li>`;
+      const i0 = (this.x.apps || {})[a] || {}, c = BENCH_FLAGS[a];
+      // app info as label/value rows; numbers (version, MTU) in the data font
+      const info = [["Version", `<span class="num">${esc(this.ver(a))}</span>`], ["MTU", i0.mtu ? `<span class="num" title="Tunnel packet size">${i0.mtu}</span>` : ""],
+        ["Developer", c ? `${benchFlag(a)} ${BENCH_COUNTRIES[c]}` : ""], ["Also on", i0.iphone ? "iPhone 📱" : ""]]
+        .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+      const rest = cols.filter((_, j) => !head.includes(j)).map((k) =>
+        `<div class="${this.flag(k, a)}"><dt>${esc(benchKey(k))}<span>${esc(k[2])}</span></dt><dd title="${esc(range(k, a))}">${val(k, a)}</dd></div>`).join("");
+      return `<li><details class="rr" data-app="${a}"><summary>
+        <span class="rr-name"><span class="rr-n">${i + 1}</span><b>${esc(benchName(a))}</b></span>
+        ${head.map((j) => `<span class="rr-v ${this.flag(cols[j], a)}${j === si ? " on" : ""}" title="${esc(range(cols[j], a))}">${val(cols[j], a)}</span>`).join("")}</summary>
+        <div class="rr-more"><dl class="rr-info">${info}</dl><dl class="rr-all">${rest}</dl></div></details></li>`;
     }).join("");
-    requestAnimationFrame(() => requestAnimationFrame(() => ol.classList.add("drawn")));
   },
   // the scatter, redrawn at the width of its screen so text stays readable on a phone
   chart() {

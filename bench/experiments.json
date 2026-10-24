@@ -7690,7 +7690,7 @@
     },
     "sfm": {
      "mtu": 4064,
-     "iphone": true
+     "iphone": false
     },
     "anywhere": {
      "mtu": 4064,
