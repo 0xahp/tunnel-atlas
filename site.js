@@ -359,9 +359,9 @@ const BENCH_COLS = {
   I: [["", "Score", "of 100", "lab", "score", 1, true],
     ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
     ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
-    ["At 200 Mbit/s", "Extra power", "mW", "down_200", "phone_extra_w", 1e3], ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "phone_energy_per_gb", 1],
+    ["At 200 Mbit/s", "Power at 200 Mbit/s", "mW added", "down_200", "phone_extra_w", 1e3], ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "phone_energy_per_gb", 1],
     ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1], ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1],
-    ["Idle", "Extra power", "mW", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
+    ["Idle", "Power", "mW added", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
 };
 const benchName = (a) => BENCH_NAMES[a] || a;
 // the country code as a flag emoji, with the country name for screen readers and hover
