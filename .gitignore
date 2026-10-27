@@ -2,6 +2,8 @@
 .DS_Store
 *.md
 !README.md
+!README.zh-CN.md
+!README.fa.md
 reports/
 research_notes/
 *.json

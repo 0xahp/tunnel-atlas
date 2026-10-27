@@ -1,3 +1,5 @@
+English | [简体中文](README.zh-CN.md) | [فارسی](README.fa.md)
+
 # Tunnel Atlas
 
 **Which proxy client app is fastest and lightest on the battery?** A benchmark of 24 apps on a Mac and 7 on an iPhone (October 2026), plus a field guide to VPN and proxy protocols.
