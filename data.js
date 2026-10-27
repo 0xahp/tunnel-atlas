@@ -10,7 +10,7 @@ const SRC = {
   history: ["Protocol history report (unpublished)", null, "local"],
   cores: ["Proxy cores catalog (unpublished)", null, "local"],
   appcount: ["App support count across 38 client apps (unpublished notes)", null, "local"],
-  bench: ["Client-app benchmark (Benchmark tab)", "index.html#bench", "data"],
+  bench: ["Client-app benchmark (Benchmark page)", "index.html", "data"],
   battery: ["iOS VPN battery fact-check (unpublished)", null, "local"],
 
   // Papers and measurements

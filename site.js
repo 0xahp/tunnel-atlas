@@ -1,4 +1,4 @@
-/* Tunnel Atlas: renders index.html from data.js. Three tabs: benchmark; setup (picks and their flow); timeline. */
+/* Tunnel Atlas: renders the pages from data.js. Three pages: benchmark (index.html); setup (routes.html: picks and their flow); timeline. */
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
@@ -23,34 +23,10 @@ themeBtn.addEventListener("click", () => {
   labelTheme();
 });
 
-/* ---------- Tabs ---------- */
-const TABS = ["bench", "setup", "timeline"];
-const rendered = {};
-function showTab(id, focus) {
-  if (id === "picks") id = "setup"; // old link
-  if (!TABS.includes(id)) id = "bench";
-  for (const t of TABS) {
-    const on = t === id, btn = $("#tab-" + t);
-    btn.setAttribute("aria-selected", on);
-    btn.tabIndex = on ? 0 : -1;
-    $("#" + t).hidden = !on;
-  }
-  if (focus) $("#tab-" + id).focus();
-  if (!rendered[id]) { rendered[id] = true; ({ timeline: Timeline, setup: Picks, bench: Bench })[id].init(); }
-  if (id === "timeline") Timeline.layout();
-  if (id === "bench" && Bench.x) Bench.chart(); // redraw at the current width
-  if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id);
-}
-for (const t of TABS) $("#tab-" + t).addEventListener("click", () => { showTab(t); window.scrollTo(0, 0); });
-$(".rail-tabs").addEventListener("keydown", (e) => {
-  const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
-  if (!step) return;
-  e.preventDefault();
-  const cur = TABS.findIndex((t) => $("#tab-" + t).getAttribute("aria-selected") === "true");
-  showTab(TABS[(cur + step + TABS.length) % TABS.length], true);
-  window.scrollTo(0, 0);
-});
-addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+/* ---------- Pages ----------
+   One section per page, named by <body data-page>: bench (index.html), setup (routes.html), timeline (timeline.html).
+   App pages (apps/*.html) are static and only use the theme button. Init runs at the end of this file. */
+const PAGE = document.body.dataset.page;
 
 /* ---------- Shared bits ---------- */
 const CLS_ORDER = { edge: 0, popular: 1, legacy: 2 };
@@ -95,7 +71,7 @@ const Timeline = {
       if (c && +c.dataset.i !== this.active) this.goTo(+c.dataset.i);
     });
     addEventListener("scroll", () => this.queue(), { passive: true });
-    addEventListener("resize", () => { if ($("#timeline").hidden) return; const keep = this.active; this.layout(); if (keep > 0) this.goTo(keep, false, true); });
+    addEventListener("resize", () => { const keep = this.active; this.layout(); if (keep > 0) this.goTo(keep, false, true); });
   },
   layout() {
     const win = $("#tl-window"), W = win.clientWidth, narrow = W < 640;
@@ -149,7 +125,7 @@ const Timeline = {
     this.update();
   },
   queue() {
-    if (this.raf || $("#timeline").hidden) return;
+    if (this.raf) return;
     this.raf = requestAnimationFrame(() => { this.raf = 0; this.update(); });
   },
   update() {
@@ -315,11 +291,11 @@ const BENCH_CORES = [
   ["Own core", "no sing-box, Xray or mihomo inside", { anywhere: ["Swift", "GPL-3.0", "AnywhereIP (own, Swift)"], surge: [""], shadowrocket: [""],
     egern: ["", "", "own user-space stack (vendor's note, 2.15)"] }]];
 const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 11 Pro" };
-// keep in sync with make-static.py
+// make-static.py reads this for the static copy and the app pages
 const BENCH_CHAIN_NOTE = ["Real use costs more.", "These labs measure one proxy with no rules. In an earlier test through real servers, "
   + "two chained proxies with routing rules used about 3× the energy per GB of a single proxy (1.8–3.1× across the apps that kept the same version)."];
 // app energy at 200 Mbit/s on the Mac: [app, setup, mW, lab test?, the same app's one-hop mW (chain rows only)]; mW = J per GB × 25.
-// Real path: 14–15 Oct (at 100 Mbit/s) and Aestate 27 Oct; lab: 20 and 25 Oct. keep in sync with make-static.py
+// Real path: 14–15 Oct (at 100 Mbit/s) and Aestate 27 Oct; lab: 20 and 25 Oct. make-static.py reads this too
 const BENCH_ENERGY = {
   one: ["One protocol", "times Egern", [["Egern", "Reality one hop", 7.6], ["Anywhere", "Reality one hop", 23.7], ["Shadowrocket", "Reality one hop", 33.7],
     ["Aestate", "Reality one hop", 47.4], ["WireGuard app 1.0.16", "WireGuard", 170, 1], ["V2Box", "Shadowsocks", 188, 1], ["Happ", "Shadowsocks", 365, 1]],
@@ -331,15 +307,15 @@ const BENCH_ENERGY = {
       "Egern's Hysteria2 chain is from a lab test on 25 Oct; Hysteria2 alone was not measured, so it has no split. In that lab Egern's Reality chain read 15 mW, so a real path may read higher.",
       "Anywhere's chain was measured on version 2.4, its one hop on 2.3. Aestate has no domain routing, so it has no chain."]]
 };
-// keep in sync with make-static.py
+// make-static.py reads this for the static copy and the app pages
 const BENCH_ENERGY_INTRO = "The app's own energy, as macOS estimates it for the app's processes, at a 200 Mbit/s download (J per GB × 25). "
   + "Real path = through real servers over the internet; the 14–15 Oct runs were at 100 Mbit/s, assuming the same energy per GB. Lab = a test server on the same Mac.";
-// keep in sync with make-static.py
+// make-static.py reads this for the static copy and the app pages
 const BENCH_MTU_NOTE =["MTU changes results a lot.", "At the common 1500, an app handles about 2.7× more packets per GB than at 4000. "
   + "In our checks, raising the MTU from 1500 to 4000 lifted SFM's upload from 10.8 to about 14.3 Gbit/s (1.3×), and Karing's speed from 0.9 to 2.4 Gbit/s "
   + "(2.5×, with its stack also changed) while its CPU time per GB fell by about a fifth. On the Mac, the seven apps at 1500 or below are all among the nine slowest. "
   + "We set 4000 wherever an app allows it."];
-// keep in sync with make-static.py
+// make-static.py reads this for the static copy and the app pages
 const BENCH_LAB_METHOD = [
   "MacBook Air M1, macOS 27.0.1 (susi connect, HyperOrbit and Tunna: macOS 26.7.1), on battery, screen off, no app windows open. Every app ran in TUN mode with the same Shadowsocks 2022 profile "
   + "(2022-blake3-aes-128-gcm) to a sing-box server on the same Mac; iperf3 3.22 drove the traffic. A script ran the apps one at a time over two rounds, "
@@ -350,7 +326,7 @@ const BENCH_LAB_METHOD = [
   + "than any internet connection.",
   "Exceptions: Karing used its mixed stack. Happ ignores its MTU setting on the Mac. Hiddify 5.0.0 (a development build) ran as root with its fixed MTU of 9000. "
   + "v2rayN chains two cores (sing-box, then Xray). Karing's 4-connection download and v2rayN's 1-connection upload are from one round. Tunna closes any connection idle for 10 s, which cut the test's own control connection, so we raised that limit to 300 s for its test."];
-// keep in sync with make-static.py
+// make-static.py reads this for the static copy and the app pages
 const BENCH_IPHONE_METHOD = [
   "iPhone 11 Pro, iOS 27.0.1, on the USB cable at full charge, run overnight by an automated test with nobody touching it. A test app on the phone runs "
   + "a Shadowsocks 2022 server (2022-blake3-aes-128-gcm) that every VPN app points at, so no Wi-Fi or internet is involved. Three rounds, apps in a "
@@ -381,6 +357,8 @@ const BENCH_COLS = {
     ["Idle", "Power", "mW added", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
 };
 const benchName = (a) => BENCH_NAMES[a] || a;
+// the app's page: apps/<name in lower case, dashes>.html, written by make-static.py (same rule there)
+const benchSlug = (a) => benchName(a).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 // the country code as a flag emoji, with the country name for screen readers and hover
 const benchFlag = (a) => { const c = BENCH_FLAGS[a];
   return c ? `<span class="flag" role="img" aria-label="Developer based in ${BENCH_COUNTRIES[c]}" title="Developer based in ${BENCH_COUNTRIES[c]}">${String.fromCodePoint(...[...c].map((l) => 0x1f1a5 + l.charCodeAt(0)))}</span>` : ""; };
@@ -421,7 +399,7 @@ const Bench = {
     const follow = (e) => { const t = e.target.closest(".rr"); if (t && t.dataset.app !== this.cur) this.pick(t.dataset.app); };
     body.addEventListener("mouseover", follow);
     body.addEventListener("focusin", follow);
-    addEventListener("resize", () => { const c = $("#bn-chart"); if (c && !$("#bench").hidden && c.clientWidth !== this.cw) this.chart(); });
+    addEventListener("resize", () => { const c = $("#bn-chart"); if (c && c.clientWidth !== this.cw) this.chart(); });
     this.render();
   },
   stats(ca, me) { return (this.x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {}; },
@@ -528,7 +506,7 @@ const Bench = {
       const i0 = (this.x.apps || {})[a] || {}, c = BENCH_FLAGS[a];
       // app info as label/value rows; numbers (version, MTU) in the data font
       const info = [["Version", `<span class="num">${esc(this.ver(a))}</span>`], ["MTU", i0.mtu ? `<span class="num" title="Tunnel packet size">${i0.mtu}</span>` : ""],
-        ["Developer", c ? `${benchFlag(a)} ${BENCH_COUNTRIES[c]}` : ""]]
+        ["Developer", c ? `${benchFlag(a)} ${BENCH_COUNTRIES[c]}` : ""], ["Page", `<a href="apps/${benchSlug(a)}.html">All of ${esc(benchName(a))}'s numbers</a>`]]
         .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
       const rest = cols.filter((_, j) => !head.includes(j)).map((k) =>
         `<div class="${this.flag(k, a)}"><dt>${esc(benchKey(k))}<span>${esc(k[2])}</span></dt><dd title="${esc(range(k, a))}">${val(k, a)}</dd></div>`).join("");
@@ -607,4 +585,6 @@ function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2
 }
 function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
 
-showTab(location.hash.slice(1) || "bench");
+const PAGE_VIEW = { timeline: Timeline, setup: Picks, bench: Bench }[PAGE];
+if (PAGE_VIEW) PAGE_VIEW.init();
+if (PAGE === "timeline") Timeline.layout();
