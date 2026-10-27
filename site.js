@@ -318,8 +318,24 @@ const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 1
 // keep in sync with make-static.py
 const BENCH_CHAIN_NOTE = ["Real use costs more.", "These labs measure one proxy with no rules. In an earlier test through real servers, "
   + "two chained proxies with routing rules used about 3× the energy per GB of a single proxy (1.8–3.1× across the apps that kept the same version)."];
+// app energy at 200 Mbit/s on the Mac: [app, setup, mW, lab test?, the same app's one-hop mW (chain rows only)]; mW = J per GB × 25.
+// Real path: 14–15 Oct (at 100 Mbit/s) and Aestate 27 Oct; lab: 20 and 25 Oct. keep in sync with make-static.py
+const BENCH_ENERGY = {
+  one: ["One protocol", "times Egern", [["Egern", "Reality one hop", 7.6], ["Anywhere", "Reality one hop", 23.7], ["Shadowrocket", "Reality one hop", 33.7],
+    ["Aestate", "Reality one hop", 47.4], ["WireGuard app 1.0.16", "WireGuard", 170, 1], ["V2Box", "Shadowsocks", 188, 1], ["Happ", "Shadowsocks", 365, 1]],
+    ["Lighter bars are lab tests on other protocols, so they compare only roughly with the real-path bars.",
+      "Aestate was measured on 27 Oct at about 185 Mbit/s; Egern read 9 mW in that same run, so Aestate used about 5.4× Egern's energy on the day."]],
+  chain: ["Chain + rules", "times the one hop", [["Egern", "Reality chain", 23.3, 0, 7.6], ["Egern", "Hysteria2 chain", 78, 1], ["Shadowrocket", "Reality chain", 100.4, 0, 33.7],
+    ["Anywhere", "Reality chain", 103.6, 0, 23.7]],
+    ["Chain: the outer protocol to a first server, Shadowsocks inside it to a second, plus everyday routing rules. Gray is the same app's one-hop cost, up to the dashed line; gold is the extra for the chain and rules.",
+      "Egern's Hysteria2 chain is from a lab test on 25 Oct; Hysteria2 alone was not measured, so it has no split. In that lab Egern's Reality chain read 15 mW, so a real path may read higher.",
+      "Anywhere's chain was measured on version 2.4, its one hop on 2.3. Aestate has no domain routing, so it has no chain."]]
+};
 // keep in sync with make-static.py
-const BENCH_MTU_NOTE = ["MTU changes results a lot.", "At the common 1500, an app handles about 2.7× more packets per GB than at 4000. "
+const BENCH_ENERGY_INTRO = "The app's own energy, as macOS estimates it for the app's processes, at a 200 Mbit/s download (J per GB × 25). "
+  + "Real path = through real servers over the internet; the 14–15 Oct runs were at 100 Mbit/s, assuming the same energy per GB. Lab = a test server on the same Mac.";
+// keep in sync with make-static.py
+const BENCH_MTU_NOTE =["MTU changes results a lot.", "At the common 1500, an app handles about 2.7× more packets per GB than at 4000. "
   + "In our checks, raising the MTU from 1500 to 4000 lifted SFM's upload from 10.8 to about 14.3 Gbit/s (1.3×), and Karing's speed from 0.9 to 2.4 Gbit/s "
   + "(2.5×, with its stack also changed) while its CPU time per GB fell by about a fifth. On the Mac, the seven apps at 1500 or below are all among the nine slowest. "
   + "We set 4000 wherever an app allows it."];
@@ -347,7 +363,8 @@ const BENCH_IPHONE_METHOD = [
   "sing-box (SFI) 1.14.7 was added on 22 Oct from one round, against no-VPN steps in the same session (0.83 W under load, 0.78 W idle). An Egern round in that session matched its earlier figures: speed within 2%, the same CPU, wakeups and memory, 0.06 W extra. Its profile sends apple.com traffic direct, so iOS could check the test app while the VPN was on."];
 const BENCH_SETUPS = {
   L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."],
-  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."]
+  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."],
+  R: ["Real use", BENCH_ENERGY_INTRO]   // not an experiment in experiments.json: drawn from BENCH_ENERGY
 };
 // table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
 const BENCH_COLS = {
@@ -382,12 +399,15 @@ const Bench = {
         <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
       return;
     }
-    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => `<button type="button" role="radio" data-v="${id}">${esc(t)}, ${Object.keys(this.data.experiments.find((e) => e.id === id).versions).length} apps</button>`).join("");
+    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => { const x = this.data.experiments.find((e) => e.id === id);
+      return `<button type="button" role="radio" data-v="${id}">${esc(t)}${x ? `, ${Object.keys(x.versions).length} apps` : ""}</button>`; }).join("");
     $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = 0; this.render(); } });
     const body = $("#bn-body");
     body.addEventListener("click", (e) => {
       const b = e.target.closest(".rr-head button");
       if (b) { this.sort = +b.dataset.i; this.ranked(); return; }
+      const t = e.target.closest("#bn-en-tab button");
+      if (t) { this.enTab = t.dataset.v; this.energy(); return; }
       // a tap or click on a dot pins its popup; a second tap or a tap elsewhere closes it
       const p = e.target.closest(".pt");
       if (p) { this.pinned = this.pinned === p.dataset.app ? null : p.dataset.app; this.pop(this.pinned); return; }
@@ -417,6 +437,7 @@ const Bench = {
   },
   render() {
     $("#bn-exp").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.exp));
+    if (this.exp === "R") { this.realUse(); return; }
     const x = this.x = this.data.experiments.find((e) => e.id === this.exp), I = this.exp === "I";
     const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
     const score = this.stats("lab", "score"), byScore = Object.keys(x.versions).sort((p, q) => (score[q] || { median: -1 }).median - (score[p] || { median: -1 }).median);
@@ -460,6 +481,35 @@ const Bench = {
         the app version; a real network adds its own costs.</p>`;
     this.ranked();
     this.chart();
+  },
+  // Real use: the app energy chart through real servers, with its two views as small pills
+  realUse() {
+    $("#bn-body").innerHTML = `
+      <div class="bn-block"><h3>Energy in real use, at 200 Mbit/s</h3><p class="bn-setup">${esc(BENCH_SETUPS.R[1])}</p></div>
+      <section class="screen bn-energy" aria-label="App energy at 200 Mbit/s">
+        <div class="seg seg-sm" id="bn-en-tab" role="radiogroup" aria-label="View">${Object.entries(BENCH_ENERGY).map(([k, [t]]) => `<button type="button" role="radio" data-v="${k}">${esc(t)}</button>`).join("")}</div>
+        <div id="bn-en"></div></section>
+      <p class="note bn-foot">Independent, non-commercial testing on one Mac (MacBook Air M1), October 2026. Results depend on the device, the OS,
+        the app version and the network.</p>`;
+    this.energy();
+  },
+  // app energy bars: one protocol (times Egern), or chain + rules split at the same app's one-hop cost
+  enTab: "one",
+  energy() {
+    $("#bn-en-tab").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.enTab));
+    const [, per, rows, notes] = BENCH_ENERGY[this.enTab], chain = this.enTab === "chain";
+    const top = Math.max(...rows.map((r) => r[2])) * 1.04, pc = (v) => (v / top * 100).toFixed(2) + "%", base = rows[0][2];
+    const times = (v, b) => { const x = v / b; return (x < 10 ? x.toFixed(1) : Math.round(x)) + "×"; };
+    $("#bn-en").innerHTML = `<ol class="eb">${rows.map(([app, setup, mw, lab, hop]) => {
+      const bar = hop ? `<span class="eb-bar eb-hop" style="width:${pc(hop)}"></span><span class="eb-bar" style="width:${pc(mw - hop)}"></span><i class="eb-cut" style="left:${pc(hop)}"></i>`
+        : `<span class="eb-bar" style="width:${pc(mw)}"></span>`;
+      const val = chain ? `${+mw.toFixed(1)}<small>mW</small>` : `${+mw.toFixed(1)}<small>mW</small> · ${times(mw, base)}`;
+      return `<li class="${lab ? "lab" : ""}${!chain && mw === base ? " best" : ""}"><p class="eb-top"><span><b>${esc(app)}</b> <span>${esc(setup)} · ${lab ? "lab" : "real path"}</span></span>
+        <span class="eb-val">${val}</span></p><div class="eb-track" aria-hidden="true">${bar}</div>
+        ${hop ? `<p class="eb-sub">+${+(mw - hop).toFixed(1)} mW for chain (${times(mw, hop)} one hop)</p>` : ""}</li>`; }).join("")}</ol>
+      <p class="bn-key">${chain ? `<span><i class="k-hop"></i>one hop</span><span><i class="k-real"></i>extra for chain + rules</span><span><i class="k-cut"></i>one-hop cost</span><span><i class="k-lab"></i>lab, total only</span>`
+        : `<span><i class="k-best"></i>Egern</span><span><i class="k-real"></i>real path, Reality</span><span><i class="k-lab"></i>lab, other protocol</span>`}</p>
+      ${notes.map((t) => `<p class="note">${esc(t)}</p>`).join("")}`;
   },
   // the ranking: one card per app with score, speed and energy; tap it for the app's details and other numbers
   ranked() {
