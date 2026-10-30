@@ -1,6 +1,8 @@
 /* Tunnel Atlas. Warm paper, one old-gold accent, serif headings. Every tab is one scrolling post: a reading column with
    wider figures, and the full tables on data.html. Status colours mean status and always come with a symbol or word.
    Mobile first: base rules are for a phone; min-width queries add the wide layouts. Rules in DESIGN.md. */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400 600; font-display: swap; src: url(assets/fonts/inter-latin.woff2) format("woff2"); }
+@font-face { font-family: "Source Serif 4"; font-style: normal; font-weight: 500 600; font-display: swap; src: url(assets/fonts/source-serif-4-latin.woff2) format("woff2"); }
 :root {
   --bg: #f4f2eb;         /* warm paper */
   --screen: #ffffff;     /* raised panels */
