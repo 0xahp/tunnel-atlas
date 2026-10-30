@@ -1,5 +1,5 @@
 /* tunnel atlas: all page data. Every item points to a source key in SRC.
-   Research notes and reports are kept private (not published). Rendering: site.js (index.html) and sources.js (sources.html). */
+   Research notes and reports are kept private (not published). Rendering: site.js (figures in the posts) and make-static.py (everything else). */
 
 /* [label, url, kind] */
 const SRC = {

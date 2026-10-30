@@ -1,275 +1,45 @@
-/* Tunnel Atlas: renders the pages from data.js. Three pages: benchmark (index.html); setup (routes.html: picks and their flow); timeline. */
+/* Tunnel Atlas: the figures in the Benchmark and Routes posts. The prose is in the pages; the full tables are on data.html.
+   Each figure holds one choice at most, and that choice lives in the URL (?lab=iphone, ?view=chain, ?censor=2). */
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
-const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const srcLinks = (keys) => `<div class="src-list">${[...new Set(keys || [])].filter((k) => SRC[k])
+const srcLinks = (keys) => `<div class="src-list">${[...new Set(keys || [])].filter((k) => SRC[k] && SRC[k][1])
   .map((k) => `<a href="${esc(SRC[k][1])}"${/^https?:/.test(SRC[k][1]) ? ' target="_blank" rel="noopener"' : ""}>${esc(SRC[k][0])}</a>`).join("")}</div>`;
+const params = new URLSearchParams(location.search);
+const setParam = (k, v, dflt) => { const u = new URL(location); if (v === dflt) u.searchParams.delete(k); else u.searchParams.set(k, v); history.replaceState(null, "", u); };
+// a row of pills; only their pressed state changes on a click, so focus stays on the button
+const seg = (label, opts, cur) => `<div class="seg" role="group" aria-label="${esc(label)}">${opts.map(([v, t]) => `<button type="button" data-v="${esc(v)}" aria-pressed="${v === cur}">${esc(t)}</button>`).join("")}</div>`;
+const pressSeg = (el, cur) => el.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === cur));
 
-/* ---------- Theme ---------- */
-const themeBtn = $("#theme-btn");
-function effectiveTheme() {
-  const t = document.documentElement.dataset.theme;
-  return t || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-}
-/* the button names the theme it switches to */
-const labelTheme = () => { themeBtn.textContent = effectiveTheme() === "dark" ? "Light" : "Dark"; };
-labelTheme();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", labelTheme);
-themeBtn.addEventListener("click", () => {
-  const next = effectiveTheme() === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  try { localStorage.setItem("theme", next); } catch (e) {}
-  labelTheme();
-});
-
-/* ---------- Pages ----------
-   One section per page, named by <body data-page>: bench (index.html), setup (routes.html), timeline (timeline.html).
-   App pages (apps/*.html) are static and only use the theme button. Init runs at the end of this file. */
-const PAGE = document.body.dataset.page;
-
-/* ---------- Shared bits ---------- */
-const CLS_ORDER = { edge: 0, popular: 1, legacy: 2 };
-const WAVES = { // tiny line glyphs for the connection type
-  tcp: "M0 9h5V3h7v6h5V3h7v6h10", udp: "M0 9h34M4 9V3M12 9V3M22 9V3M30 9V3", quic: "M0 9h34M4 9V3M10 9V3M16 9V3M22 9V3M28 9V3",
-  both: "M0 9h4V3h6v6h3M17 9h17M20 9V3M27 9V3", dns: "M0 9h6l3-6 3 6h4l3-6 3 6h12", raw: "M0 9h8V2h1v7h8V2h1v7h16", any: "M0 6h34"
-};
-const wave = (c) => `<svg class="wave" viewBox="0 0 34 12" aria-hidden="true"><path d="${WAVES[c]}" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>`;
-const meter = (p) => `<span class="meter" data-p="${p}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>`;
-const ST_LABEL = { ok: "Works", deg: "Degraded", blk: "Blocked", unk: "No data" };
-
-/* status for the four countries: [{s, inf, note}] */
-function dpiOf(id) {
-  const d = TL[id].d;
-  if (typeof d === "string") {
-    const row = MATRIX.rows.find((r) => r[0] === d);
-    return row[1].map(([s, note]) => ({ s, inf: /unconfirmed|no 2026/i.test(note), note }));
-  }
-  return d.map((x) => ({ s: x.replace("~", ""), inf: x.endsWith("~"), note: "" }));
-}
-const stCell = (c, code) => `<span class="st ${c.s}${c.inf ? " inf" : ""}" title="${esc(COUNTRIES.find((k) => k[0] === code)[1])}: ${esc(ST_LABEL[c.s])}${c.inf ? " (inferred)" : ""}${c.note ? " · " + esc(c.note) : ""}">${code}</span>`;
-
-/* ==================== Timeline ==================== */
-const Timeline = {
-  items: [], slot: 224, cursor: 300, active: -1, laneH: 13,
-  init() {
-    this.items = TECHS.slice().sort((a, b) => b.y - a.y || CLS_ORDER[a.cls] - CLS_ORDER[b.cls] || a.name.localeCompare(b.name));
-    $("#tl-legend").innerHTML = `
-      <div><b>Link</b>${wave("tcp")}TCP ${wave("quic")}QUIC ${wave("udp")}UDP</div>
-      <div><b>Power</b>${meter(1)} low … ${meter(4)} highest (estimate)</div>`;
-    const track = $("#tl-track");
-    track.addEventListener("click", (e) => { const c = e.target.closest(".card"); if (c) this.goTo(+c.dataset.i); });
-    track.addEventListener("keydown", (e) => {
-      const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-      if (!step) return;
-      e.preventDefault();
-      this.goTo(Math.max(0, Math.min(this.items.length - 1, this.active + step)), true);
-    });
-    track.addEventListener("focusin", (e) => {
-      $("#tl-window").scrollLeft = 0; // keep focus from scrolling the clipped window sideways
-      const c = e.target.closest(".card");
-      if (c && +c.dataset.i !== this.active) this.goTo(+c.dataset.i);
-    });
-    addEventListener("scroll", () => this.queue(), { passive: true });
-    addEventListener("resize", () => { const keep = this.active; this.layout(); if (keep > 0) this.goTo(keep, false, true); });
-  },
-  layout() {
-    const win = $("#tl-window"), W = win.clientWidth, narrow = W < 640;
-    if (!W) return;
-    this.slot = narrow ? 188 : 224;
-    $("#tl-lane-labels").innerHTML = FAMILIES.map((f) => `<span>${esc(f.label)}</span>`).join("");
-    const labelsW = $("#tl-lane-labels").offsetWidth;
-    this.cursor = Math.round(Math.max(labelsW + this.slot / 2 + 12, W * 0.3));
-    win.style.setProperty("--cursor-x", this.cursor + "px");
-    win.style.setProperty("--slot", this.slot + "px");
-    const n = this.items.length, padL = this.cursor - this.slot / 2, trackW = padL + n * this.slot + (W - this.cursor);
-    this.padL = padL;
-    const fams = FAMILIES.map((f) => f.id), lh = this.laneH, laneTop = 4;
-    const x0 = (i) => padL + i * this.slot;
-    // ruler: a year mark where each new year starts
-    let ruler = "", prev = null;
-    this.items.forEach((t, i) => { if (t.y !== prev) { ruler += `<span class="yr" data-y="${t.y}" style="left:${x0(i)}px">${t.y}</span>`; prev = t.y; } });
-    // lanes: one square-wave trace per family; a pulse where that family has a technique
-    let lanes = "";
-    fams.forEach((f, li) => {
-      const yLow = laneTop + li * lh + lh - 3, yHigh = laneTop + li * lh + 3;
-      let d = `M0 ${yLow}`;
-      this.items.forEach((t, i) => {
-        if (t.fam !== f) return;
-        const a = x0(i) + this.slot * 0.2, b = x0(i) + this.slot * 0.8;
-        d += `H${a}V${yHigh}H${b}V${yLow}`;
-      });
-      lanes += `<path class="lane-trace" d="${d}H${trackW}"/>`;
-    });
-    lanes += `<rect class="lane-hit" id="tl-hit" x="0" y="0" width="${this.slot * 0.6}" height="${lh - 6}" rx="1"/>`;
-    const lanesH = laneTop + fams.length * lh + 4;
-    const cards = this.items.map((t, i) => {
-      const tl = TL[t.id], dpi = dpiOf(t.id);
-      return `<button class="card" type="button" data-i="${i}" style="left:${x0(i) + 7}px" aria-label="${esc(t.name)}, ${esc(t.year)}">
-        <span class="card-top"><span>${esc(t.year)}</span><span class="chip c-${t.cls}">${esc(CLASSES[t.cls].label)}</span></span>
-        <span class="card-name">${esc(t.name)}</span>
-        <span class="card-dpi">${dpi.map((c, k) => stCell(c, COUNTRIES[k][0])).join("")}</span>
-        <span class="card-foot"><span class="conn">${wave(tl.c)}${esc(CONN[tl.c].label)}</span>${meter(tl.p)}</span>
-      </button>`;
-    }).join("");
-    $("#tl-track").style.width = trackW + "px";
-    $("#tl-track").innerHTML = `<div class="tl-ruler">${ruler}</div>
-      <svg class="tl-lanes" width="${trackW}" height="${lanesH}" aria-hidden="true">${lanes}</svg>
-      <div class="tl-cards">${cards}</div>`;
-    $("#tl-lane-labels").style.gridTemplateRows = `repeat(${fams.length}, ${lh}px)`;
-    $("#tl-lane-labels").style.paddingTop = laneTop + "px";
-    // vertical scroll distance = horizontal travel, so each slot takes one slot-width of scrolling
-    const frameH = $("#tl-frame").offsetHeight;
-    $("#tl-scroll").style.height = frameH + (n - 1) * this.slot + "px";
-    this.active = -1;
-    this.update();
-  },
-  queue() {
-    if (this.raf) return;
-    this.raf = requestAnimationFrame(() => { this.raf = 0; this.update(); });
-  },
-  update() {
-    const sc = $("#tl-scroll"), frame = $("#tl-frame");
-    const stickyTop = parseFloat(getComputedStyle(frame).top) || 0;
-    const max = (this.items.length - 1) * this.slot;
-    const off = Math.max(0, Math.min(max, stickyTop - sc.getBoundingClientRect().top));
-    $("#tl-track").style.transform = `translateX(${-off}px)`;
-    const nowW = $("#tl-now").offsetWidth;
-    document.querySelectorAll(".yr").forEach((y) => { y.style.visibility = y.offsetLeft - off < nowW ? "hidden" : ""; });
-    const i = Math.round(off / this.slot);
-    if (i !== this.active) this.select(i);
-  },
-  select(i) {
-    const prev = $(".card.on");
-    if (prev) prev.classList.remove("on");
-    this.active = i;
-    const t = this.items[i], card = $(`.card[data-i="${i}"]`);
-    card.classList.add("on");
-    const famIdx = FAMILIES.findIndex((f) => f.id === t.fam);
-    const hit = $("#tl-hit");
-    hit.setAttribute("x", this.padL + i * this.slot + this.slot * 0.2);
-    hit.setAttribute("y", 4 + famIdx * this.laneH + 3);
-    document.querySelectorAll(".yr").forEach((y) => y.classList.toggle("on", +y.dataset.y === t.y));
-    $("#tl-now").textContent = t.y;
-    $("#tl-cursor-year").textContent = `${t.y} · ${i + 1} of ${this.items.length}`;
-    this.readout(t);
-  },
-  goTo(i, focus, instant) {
-    const sc = $("#tl-scroll"), stickyTop = parseFloat(getComputedStyle($("#tl-frame")).top) || 0;
-    const top = sc.getBoundingClientRect().top + window.scrollY - stickyTop + i * this.slot;
-    window.scrollTo({ top, behavior: reduced || focus || instant ? "auto" : "smooth" });
-    if (focus) $(`.card[data-i="${i}"]`).focus({ preventScroll: true });
-  },
-  readout(t) {
-    const tl = TL[t.id], dpi = dpiOf(t.id), pt = POWER_TIERS[tl.p];
-    const notes = typeof tl.d === "string";
-    const rows = dpi.map((c, k) => `<li>${stCell(c, COUNTRIES[k][0])}<span>${esc(ST_LABEL[c.s])}${c.inf ? ", inferred" : ""}</span><span>${esc(notes ? c.note : "")}</span></li>`).join("");
-    const measured = tl.m ? `Measured: <b>+${tl.m}%</b> battery current over no VPN on a 5G Android phone (2022, the only independent phone test).` : "No phone measurement exists for this technique.";
-    $("#tl-readout").innerHTML = `
-      <div class="ro-title"><h2>${esc(t.name)}</h2><span class="ro-year">${esc(t.year)} · ${esc(FAMILIES.find((f) => f.id === t.fam).label)}</span><span class="chip c-${t.cls}">${esc(CLASSES[t.cls].label)}</span></div>
-      <p class="ro-one">${esc(t.one)}</p>
-      <div class="ro-col">
-        <dl class="kv">
-          <dt>How</dt><dd>${esc(t.how)}</dd>
-          <dt>Hides</dt><dd>${esc(t.hides)}</dd>
-          <dt>Runs over</dt><dd>${esc(t.over)}</dd>
-          <dt>Found in</dt><dd>${esc(t.cores)}</dd>
-          <dt>Status</dt><dd>${esc(t.status)}</dd>
-        </dl>
-        ${srcLinks(t.src)}
-      </div>
-      <div class="ro-col">
-        <span class="ro-label">Censorship, 2026</span>
-        <ul class="dpi-rows">${rows}</ul>
-        ${tl.dn ? `<p class="note" style="margin:0">${esc(tl.dn)}</p>` : ""}
-        <span class="ro-label">Connection</span>
-        <div class="pw-row">${wave(tl.c)}<span><b>${esc(CONN[tl.c].label)}</b>: ${esc(CONN[tl.c].desc)}</span></div>
-        <span class="ro-label">Power on a phone (estimate)</span>
-        <div class="pw-row">${meter(tl.p)}<span><b>${pt.label}.</b> ${esc(pt.desc)} ${measured}</span></div>
-      </div>`;
-  }
-};
-
-/* ==================== Picks + flow ==================== */
+/* ==================== Routes: one figure per situation ==================== */
 const PICK_ROUTES = { efficient: ["vpn", "vpn", "selfsteal"], censor: ["selfsteal", "quic", "cdn"], blackout: ["relay", "cdn", "dns"] };
-const SEEN_MARK = { y: "sees it", n: "can't see it", p: "partly" };
-const Picks = {
-  goal: "censor", idx: 0,
+const Routes = {
   init() {
-    const seg = (el, opts, key) => {
-      el.innerHTML = opts.map((o) => `<button type="button" role="radio" data-v="${o.id}">${esc(o.label)}</button>`).join("");
-      el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this[key] = b.dataset.v; this.idx = 0; this.render(); } });
-    };
-    seg($("#pk-goal"), GOALS, "goal");
-    $("#pk-list").addEventListener("click", (e) => { const b = e.target.closest(".pick"); if (b) { this.idx = +b.dataset.i; this.render(); } });
-    this.render();
-  },
-  render() {
-    $("#pk-goal").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.goal));
-    const set = PICKS[this.goal];
-    $("#pk-list").innerHTML = set.items.map((p, i) => `<li><button class="pick" type="button" data-i="${i}" aria-pressed="${i === this.idx}">
-      <span class="pick-rank">${esc(p.rank)}</span><span class="pick-proto">${esc(p.proto)}</span>
-      <span class="pick-why">${esc(p.why)}</span>
-      ${p.server ? `<span class="pick-app"><b>Server:</b> ${esc(p.server)}</span>` : ""}</button>
-      ${srcLinks(p.src)}</li>`).join("");
-    $("#pk-note").textContent = set.note;
-    this.flow(ROUTES[PICK_ROUTES[this.goal][this.idx]]);
-  },
-  flow(r) {
-    const n = r.hops.length, U = 160, W = n * U, cx = (i) => i * U + U / 2, y = 52;
-    // zone bands, merged where neighbours share a zone
-    const ZN = { home: "Inside the country", border: "Border filter", abroad: "Abroad" };
-    let bands = "", i = 0;
-    while (i < n) {
-      let j = i; while (j + 1 < n && r.hops[j + 1].zone === r.hops[i].zone) j++;
-      bands += `<div class="zone-band ${r.hops[i].zone}" style="grid-column:${i + 2} / ${j + 3}">${ZN[r.hops[i].zone]}</div>`;
-      i = j + 1;
-    }
-    let svg = `<line class="wire" x1="${cx(0)}" y1="${y}" x2="${cx(n - 1)}" y2="${y}"/>`;
-    r.enc.forEach(([a, b, lbl], k) => {
-      const ty = 18; // tunnels drawn side by side on one row
-      svg += `<line class="tun" x1="${cx(a) + 12}" y1="${ty + 10}" x2="${cx(b) - 12}" y2="${ty + 10}"/><text class="tun-lbl" x="${(cx(a) + cx(b)) / 2}" y="${ty + 2}" text-anchor="middle">${esc(lbl)}</text>`;
+    document.querySelectorAll(".m-path").forEach((box) => {
+      const goal = box.dataset.goal, items = PICKS[goal].items, i0 = Math.min(+params.get(goal) || 0, items.length - 1);
+      box.innerHTML = seg("Setup", items.map((p, i) => [String(i), p.rank]), String(i0)) + `<div class="pick-detail"></div>`;
+      box.querySelector(".seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
+        setParam(goal, b.dataset.v, "0"); pressSeg(box, b.dataset.v); this.detail(box, goal, +b.dataset.v); });
+      this.detail(box, goal, i0);
     });
-    (r.legs || []).forEach((lbl, k) => { if (lbl && k < n - 1) svg += `<text class="leg-lbl" x="${(cx(k) + cx(k + 1)) / 2}" y="${y + 26}" text-anchor="middle">${esc(lbl)}</text>`; });
-    r.hops.forEach((h, k) => { svg += `<circle class="node ${h.zone}" cx="${cx(k)}" cy="${y}" r="9"/>`; });
-    if (!reduced) {
-      const dur = (n * 0.9).toFixed(1);
-      svg += `<circle class="pkt" r="4"><animateMotion dur="${dur}s" repeatCount="indefinite" path="M${cx(0)} ${y}H${cx(n - 1)}"/></circle>`;
-    }
-    const cell = (v) => {
-      const [s, note] = Array.isArray(v) ? v : [v, ""];
-      return `<div class="seen"><span class="dot ${s}" title="${SEEN_MARK[s]}"></span>${note ? `<span>${esc(note)}</span>` : ""}</div>`;
-    };
-    let grid = `<div style="grid-row:1"></div>${bands}<div style="grid-row:2"></div>
-      <svg class="flow-svg" viewBox="0 0 ${W} 92" role="img" aria-label="Path: ${esc(r.hops.map((h) => h.title).join(" → "))}">${svg}</svg>
-      <div style="grid-row:3"></div>${r.hops.map((h) => `<div class="hop"><span class="hop-title">${esc(h.title)}</span><span class="hop-sub">${esc(h.sub)}</span></div>`).join("")}`;
-    for (const [key, lbl] of SEEN_KEYS) grid += `<div class="seen-lbl">${esc(lbl)}</div>${r.hops.map((h) => cell(h.seen[key])).join("")}`;
-    grid += `<div class="seen-lbl">What happens</div>${r.hops.map((h) => `<div class="hop-desc">${esc(h.desc)}</div>`).join("")}`;
-    // phones: the same path top to bottom; the wire below a hop glows where it is encrypted
-    const vflow = r.hops.map((h, k) => {
-      const tun = k < n - 1 && r.enc.some(([a, b]) => a <= k && k < b);
-      const legs = k < n - 1 ? [...r.enc.filter(([a]) => a === k).map(([, , l]) => `<span class="vtun">${esc(l)}</span>`), r.legs && r.legs[k] ? `<span>${esc(r.legs[k])}</span>` : ""].join("") : "";
-      const seen = SEEN_KEYS.map(([key, lbl]) => { const v = h.seen[key], [s, note] = Array.isArray(v) ? v : [v, ""];
-        return `<li><span class="dot ${s}" title="${SEEN_MARK[s]}"></span>${esc(lbl)}${note ? ` <em>${esc(note)}</em>` : ""}</li>`; }).join("");
-      return `<li class="vhop ${h.zone}${tun ? " tun" : ""}${k === n - 1 ? " last" : ""}"><span class="vnode" aria-hidden="true"></span><div class="vbody">
-        ${k === 0 || r.hops[k - 1].zone !== h.zone ? `<span class="vzone">${ZN[h.zone]}</span>` : ""}
-        <span class="vtitle"><span class="hop-title">${esc(h.title)}</span><span class="hop-sub">${esc(h.sub)}</span></span>
-        <ul class="vseen" aria-label="What this hop sees">${seen}</ul><p class="hop-desc">${esc(h.desc)}</p>${legs ? `<p class="vleg">${legs}</p>` : ""}</div></li>`;
-    }).join("");
-    $("#pk-flow").innerHTML = `
-      <div class="flow-head"><h2>${esc(r.name)}</h2>
-        <div class="flow-stats"><span>Censor sees <b>${esc(r.sees)}</b></span><span>Servers <b>${esc(r.extra)}</b></span><span>Delay <b>${esc(r.latency)}</b></span></div></div>
-      <div class="flow-scroll screen"><div class="flow-grid" style="--hops:${n}">${grid}</div></div>
-      <ol class="vflow screen">${vflow}</ol>
-      <div class="flow-key"><span><i class="dot y"></i>sees it</span><span><i class="dot p"></i>partly</span><span><i class="dot n"></i>can't see it</span><span>Gold bar: encrypted span</span></div>
-      <div class="flow-pc"><div><span class="ro-label">Good</span><ul>${r.pros.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
-        <div><span class="ro-label">Watch out</span><ul>${r.cons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
-        <div><span class="ro-label">Used by</span><ul>${r.used.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div></div>
-      ${srcLinks(r.src.concat(r.hops.flatMap((h) => h.src || [])))}`;
+  },
+  detail(box, goal, i) {
+    const p = PICKS[goal].items[i], id = PICK_ROUTES[goal][i], r = ROUTES[id], n = r.hops.length;
+    const tun = (k) => k < n - 1 && r.enc.some(([a, b]) => a <= k && k < b);
+    $(".pick-detail", box).innerHTML = `
+      <h3 class="pick-h">${esc(p.proto)}</h3><p>${esc(p.why)}</p>
+      ${p.server ? `<p class="fig-note">Server: ${esc(p.server)}</p>` : ""}
+      <p class="fig-note">The path, ${esc(r.name)}. The gold line is the encrypted span; the red ring is the filter.</p>
+      <ol class="path">${r.hops.map((h, k) => `<li class="hop ${esc(h.zone)}${tun(k) ? " tun" : ""}"><b>${esc(h.title)}</b><span>${esc(h.sub)}</span></li>`).join("")}</ol>
+      <dl class="facts"><div><dt>Censor sees</dt><dd>${esc(r.sees)}</dd></div><div><dt>Servers</dt><dd>${esc(r.extra)}</dd></div><div><dt>Delay</dt><dd>${esc(r.latency)}</dd></div></dl>
+      <div class="pc"><div><h4>Good</h4><ul>${r.pros.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
+        <div><h4>Watch out</h4><ul>${r.cons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div></div>
+      ${srcLinks(p.src)}
+      <a class="raw" href="data.html#route-${esc(id)}">See who sees what at each hop</a>`;
   }
 };
 
-/* ==================== Client-app benchmark ====================
+/* ==================== Benchmark ====================
    Reads bench/experiments.json. The Mac and iPhone labs, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
@@ -290,10 +60,6 @@ const BENCH_CORES = [
   ["Xray", "Go; the XTLS core", { onexray: ["libXray", "GPL-3.0"], happ: ["libXray"], v2box: [""], incy: [""], susi: [""], tunna: [""], hyperorbit: [""] }],
   ["Own core", "no sing-box, Xray or mihomo inside", { anywhere: ["Swift", "GPL-3.0", "AnywhereIP (own, Swift)"], surge: [""], shadowrocket: [""],
     egern: ["", "", "own user-space stack (vendor's note, 2.15)"] }]];
-const BENCH_MACS = { "MacBookAir10,1": "MacBook Air M1", "iPhone12,3": "iPhone 11 Pro" };
-// make-static.py reads this for the static copy and the app pages
-const BENCH_CHAIN_NOTE = ["Real use costs more.", "These labs measure one proxy with no rules. In an earlier test through real servers, "
-  + "two chained proxies with routing rules used about 3× the energy per GB of a single proxy (1.8–3.1× across the apps that kept the same version)."];
 // app energy at 200 Mbit/s on the Mac: [app, setup, mW, lab test?, the same app's one-hop mW (chain rows only)]; mW = J per GB × 25.
 // Real path: 14–15 Oct (at 100 Mbit/s) and Aestate 27 Oct; lab: 20 and 25 Oct. make-static.py reads this too
 const BENCH_ENERGY = {
@@ -307,15 +73,15 @@ const BENCH_ENERGY = {
       "Egern's Hysteria2 chain is from a lab test on 25 Oct; Hysteria2 alone was not measured, so it has no split. In that lab Egern's Reality chain read 15 mW, so a real path may read higher.",
       "Anywhere's chain was measured on version 2.4, its one hop on 2.3. Aestate has no domain routing, so it has no chain."]]
 };
-// make-static.py reads this for the static copy and the app pages
+// make-static.py reads this for data.html and the app pages
 const BENCH_ENERGY_INTRO = "The app's own energy, as macOS estimates it for the app's processes, at a 200 Mbit/s download (J per GB × 25). "
   + "Real path = through real servers over the internet; the 14–15 Oct runs were at 100 Mbit/s, assuming the same energy per GB. Lab = a test server on the same Mac.";
-// make-static.py reads this for the static copy and the app pages
+// make-static.py reads this for data.html and the app pages
 const BENCH_MTU_NOTE =["MTU changes results a lot.", "At the common 1500, an app handles about 2.7× more packets per GB than at 4000. "
   + "In our checks, raising the MTU from 1500 to 4000 lifted SFM's upload from 10.8 to about 14.3 Gbit/s (1.3×), and Karing's speed from 0.9 to 2.4 Gbit/s "
   + "(2.5×, with its stack also changed) while its CPU time per GB fell by about a fifth. On the Mac, the seven apps at 1500 or below are all among the nine slowest. "
   + "We set 4000 wherever an app allows it."];
-// make-static.py reads this for the static copy and the app pages
+// make-static.py reads this for data.html and the app pages
 const BENCH_LAB_METHOD = [
   "MacBook Air M1, macOS 27.0.1 (susi connect, HyperOrbit and Tunna: macOS 26.7.1), on battery, screen off, no app windows open. Every app ran in TUN mode with the same Shadowsocks 2022 profile "
   + "(2022-blake3-aes-128-gcm) to a sing-box server on the same Mac; iperf3 3.22 drove the traffic. A script ran the apps one at a time over two rounds, "
@@ -326,7 +92,7 @@ const BENCH_LAB_METHOD = [
   + "than any internet connection.",
   "Exceptions: Karing used its mixed stack. Happ ignores its MTU setting on the Mac. Hiddify 5.0.0 (a development build) ran as root with its fixed MTU of 9000. "
   + "v2rayN chains two cores (sing-box, then Xray). Karing's 4-connection download and v2rayN's 1-connection upload are from one round. Tunna closes any connection idle for 10 s, which cut the test's own control connection, so we raised that limit to 300 s for its test."];
-// make-static.py reads this for the static copy and the app pages
+// make-static.py reads this for data.html and the app pages
 const BENCH_IPHONE_METHOD = [
   "iPhone 11 Pro, iOS 27.0.1, on the USB cable at full charge, run overnight by an automated test with nobody touching it. A test app on the phone runs "
   + "a Shadowsocks 2022 server (2022-blake3-aes-128-gcm) that every VPN app points at, so no Wi-Fi or internet is involved. Three rounds, apps in a "
@@ -337,223 +103,98 @@ const BENCH_IPHONE_METHOD = [
   + "Idle power differences are mostly within noise (±0.07 W); wakeups show how often the tunnel woke the processor. Same score formula as the Mac lab.",
   "Exception: one Hiddify round failed partway, so its speed and 200 Mbit/s figures are from two rounds.",
   "sing-box (SFI) 1.14.7 was added on 22 Oct from one round, against no-VPN steps in the same session (0.83 W under load, 0.78 W idle). An Egern round in that session matched its earlier figures: speed within 2%, the same CPU, wakeups and memory, 0.06 W extra. Its profile sends apple.com traffic direct, so iOS could check the test app while the VPN was on."];
-const BENCH_SETUPS = {
-  L: ["Mac lab", "Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app's own cost. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."],
-  I: ["iPhone lab", "The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%); tap a column to rank by it."],
-  R: ["Real use", BENCH_ENERGY_INTRO]   // not an experiment in experiments.json: drawn from BENCH_ENERGY
-};
-// table columns per setup: [group, label, unit, case, metric, scale, higher is better, case also shown in the tooltip]
-const BENCH_COLS = {
-  L: [["", "Score", "of 100", "lab", "score", 1, true],
-    ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
-    ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
-    ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "tunnel_energy_per_gb", 1], ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1],
-    ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1]],
-  I: [["", "Score", "of 100", "lab", "score", 1, true],
-    ["Speed", "Average", "Gbit/s", "speed", "gbps_avg", 1, true], ["Speed", "1 conn.", "down, Gbit/s", "down_1", "gbps", 1, true, "up_1"],
-    ["Speed", "4 conn.", "down, Gbit/s", "down_4", "gbps", 1, true, "up_4"],
-    ["At 200 Mbit/s", "Power at 200 Mbit/s", "mW added", "down_200", "phone_extra_w", 1e3], ["At 200 Mbit/s", "Energy", "J per GB", "down_200", "phone_energy_per_gb", 1],
-    ["At 200 Mbit/s", "CPU", "s per GB", "down_200", "tunnel_cpu_per_gb", 1], ["At 200 Mbit/s", "Memory", "MB", "down_200", "tunnel_footprint_mb", 1],
-    ["Idle", "Power", "mW added", "idle", "phone_extra_w", 1e3], ["Idle", "Wakeups", "per s", "idle", "tunnel_wakeups_per_s", 1]]
-};
 const benchName = (a) => BENCH_NAMES[a] || a;
 // the app's page: apps/<name in lower case, dashes>.html, written by make-static.py (same rule there)
 const benchSlug = (a) => benchName(a).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-// the country code as a flag emoji, with the country name for screen readers and hover
-const benchFlag = (a) => { const c = BENCH_FLAGS[a];
-  return c ? `<span class="flag" role="img" aria-label="Developer based in ${BENCH_COUNTRIES[c]}" title="Developer based in ${BENCH_COUNTRIES[c]}">${String.fromCodePoint(...[...c].map((l) => 0x1f1a5 + l.charCodeAt(0)))}</span>` : ""; };
-// column names over the ranking
-const benchKey = ([g, l]) => l === "Average" ? "Speed" : g === "Speed" ? `Speed, ${l}` : g === "Idle" ? `Idle ${l.toLowerCase()}` : l;
+const LABS = { L: ["Mac lab", "mac", "tunnel_energy_per_gb", "J per GB"], I: ["iPhone lab", "iphone", "phone_energy_per_gb", "extra J per GB"] };
+const TOP = 5;
 const Bench = {
-  exp: "L",
-  sort: 0,   // measure to rank by, best first
+  lab: params.get("lab") === "iphone" ? "I" : "L",
+  view: params.get("view") === "chain" ? "chain" : "one",
   async init() {
+    const en = $("#m-energy");
+    en.innerHTML = seg("View", Object.entries(BENCH_ENERGY).map(([k, [t]]) => [k, t]), this.view) + `<div id="m-en"></div>`;
+    $(".seg", en).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
+      this.view = b.dataset.v; setParam("view", this.view, "one"); pressSeg(en, this.view); this.energy(); });
+    this.energy();
     try {
-      const r = await fetch("bench/experiments.json", { cache: "no-store" });
-      if (!r.ok) throw new Error(r.status);
+      const r = await fetch("bench/experiments.json");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       this.data = await r.json();
     } catch (e) {
-      $("#bn-body").innerHTML = `<div class="empty"><h3>Benchmark results unavailable</h3>
-        <p class="note" style="margin:0">The results load over HTTP; opened as a local file, the page can't read them.</p></div>`;
+      const msg = `<div class="empty"><p>The results did not load (${esc(e.message)}). Reload the page, or read them on the <a href="data.html">numbers page</a>.</p></div>`;
+      $("#m-rank").innerHTML = msg; $("#m-chart").innerHTML = msg;
       return;
     }
-    $("#bn-exp").innerHTML = Object.entries(BENCH_SETUPS).map(([id, [t]]) => { const x = this.data.experiments.find((e) => e.id === id);
-      return `<button type="button" role="radio" data-v="${id}">${esc(t)}${x ? `, ${Object.keys(x.versions).length} apps` : ""}</button>`; }).join("");
-    $("#bn-exp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { this.exp = b.dataset.v; this.sort = 0; this.render(); } });
-    const body = $("#bn-body");
-    body.addEventListener("click", (e) => {
-      const b = e.target.closest(".rr-head button");
-      if (b) { this.sort = +b.dataset.i; this.ranked(); return; }
-      const t = e.target.closest("#bn-en-tab button");
-      if (t) { this.enTab = t.dataset.v; this.energy(); return; }
-      // a tap or click on a dot pins its popup; a second tap or a tap elsewhere closes it
-      const p = e.target.closest(".pt");
-      if (p) { this.pinned = this.pinned === p.dataset.app ? null : p.dataset.app; this.pop(this.pinned); return; }
-      if (this.pinned && !e.target.closest(".bn-pop")) { this.pinned = null; this.pop(null); }
-    });
-    // with a mouse, the popup also shows while the pointer is over a dot
-    body.addEventListener("pointerover", (e) => { const p = e.target.closest(".pt"); if (p && e.pointerType === "mouse" && !this.pinned) this.pop(p.dataset.app); });
-    body.addEventListener("pointerout", (e) => { const p = e.target.closest(".pt"); if (p && e.pointerType === "mouse" && !this.pinned) this.pop(null); });
-    addEventListener("keydown", (e) => { if (e.key === "Escape" && this.pinned) { this.pinned = null; this.pop(null); } });
-    // a ranking row under the pointer or keyboard focus rings its dot
-    const follow = (e) => { const t = e.target.closest(".rr"); if (t && t.dataset.app !== this.cur) this.pick(t.dataset.app); };
-    body.addEventListener("mouseover", follow);
-    body.addEventListener("focusin", follow);
-    addEventListener("resize", () => { const c = $("#bn-chart"); if (c && c.clientWidth !== this.cw) this.chart(); });
+    const rank = $("#m-rank");
+    rank.innerHTML = seg("Lab", Object.entries(LABS).map(([k, l]) => [k, l[0]]), this.lab) + `<div id="m-top"></div><a class="raw" id="m-all"></a>`;
+    $(".seg", rank).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
+      this.lab = b.dataset.v; setParam("lab", LABS[this.lab][1], "mac"); pressSeg(rank, this.lab); this.render(); });
+    // the popup: tap or focus a dot, hover with a mouse; Esc or a tap elsewhere closes it
+    const box = $("#m-chart");
+    box.addEventListener("click", (e) => { const p = e.target.closest(".pt"); if (p) { this.pop(p.dataset.app); e.stopPropagation(); } });
+    box.addEventListener("focusin", (e) => { const p = e.target.closest(".pt"); if (p) this.pop(p.dataset.app); });
+    box.addEventListener("focusout", () => this.pop(null));
+    box.addEventListener("pointerover", (e) => { const p = e.target.closest(".pt"); if (p && e.pointerType === "mouse") this.pop(p.dataset.app); });
+    box.addEventListener("pointerout", (e) => { if (e.target.closest(".pt") && e.pointerType === "mouse") this.pop(null); });
+    addEventListener("click", () => this.pop(null));
+    addEventListener("keydown", (e) => { if (e.key === "Escape") this.pop(null); });
+    addEventListener("resize", () => { if (box.clientWidth !== this.cw) this.chart(); });
     this.render();
   },
   stats(ca, me) { return (this.x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {}; },
-  ver(a) { return this.x.versions[a].replace(/\s*\(.*\)$/, ""); },
-  // "best" = best or tied with the best (ranges overlap), "worst" = worst median
-  flag([, , , ca, me, , hi], a) {
-    const s = this.stats(ca, me), v = s[a];
-    if (!v) return "";
-    const beats = hi ? (d) => s[d].min > v.max : (d) => s[d].max < v.min;
-    if (!Object.keys(s).some((d) => d !== a && beats(d))) return "best";
-    const meds = Object.values(s).map((y) => y.median);
-    return Object.keys(s).length > 2 && v.median === (hi ? Math.min(...meds) : Math.max(...meds)) ? "worst" : "";
-  },
   render() {
-    $("#bn-exp").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.exp));
-    if (this.exp === "R") { this.realUse(); return; }
-    const x = this.x = this.data.experiments.find((e) => e.id === this.exp), I = this.exp === "I";
-    const date = (s) => { const m = s.match(/^\d{4}(\d\d)(\d\d)/); return m ? `${+m[2]} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m[1] - 1]}` : s; };
-    const score = this.stats("lab", "score"), byScore = Object.keys(x.versions).sort((p, q) => (score[q] || { median: -1 }).median - (score[p] || { median: -1 }).median);
-    this.cur = null;
-    const appCards = I ? "" : BENCH_CORES.map(([core, what, list]) => {
-      const rows = byScore.filter((c) => list[c]).map((c) => {
-        const [detail, lic, stack] = list[c];
-        return `<li><b>${esc(benchName(c))}</b>${benchFlag(c)} <span class="v">${esc(this.ver(c))}</span>${detail ? `<span>${esc(detail)}</span>` : ""}
-          ${stack ? `<span>IP stack: ${esc(stack)}</span>` : ""}${lic ? `<span class="lic">${esc(lic)}</span>` : ""}</li>`;
-      }).join("");
-      return rows ? `<div class="core"><h4>${esc(core)} <span>${esc(what)}</span></h4><ul>${rows}</ul></div>` : "";
-    }).join("");
-    const powerNote = I ? "Power is the whole phone's, minus the same test without a VPN." : "Energy and CPU are macOS's own figures for the app's tunnel process.";
-
-    $("#bn-body").innerHTML = `
-      <div class="bn-block"><p class="bn-setup">${esc(BENCH_SETUPS[this.exp][1])}</p>
-        <dl class="bn-meta">
-          <div><dt>Device</dt><dd>${esc(BENCH_MACS[x.device || x.mac] || x.device || x.mac)}</dd></div>
-          <div><dt>Power</dt><dd>${x.device ? "USB cable" : "Battery"}</dd></div>
-          <div><dt>${x.sessions.length > 1 ? "Runs" : "Run"}</dt><dd>${esc([...new Set(x.sessions.map(date))].join(", "))} 2026</dd></div>
-          <div><dt>Rounds</dt><dd>${x.rounds}</dd></div>
-          <div><dt>Apps</dt><dd>${byScore.length}</dd></div></dl></div>
-      <div class="bn-duo">
-        <section class="screen bn-rank-screen" aria-labelledby="bn-rank-h"><div class="screen-head"><h3 id="bn-rank-h">Ranking</h3></div>
-          <p class="screen-note">Tap a column to rank by it; tap an app for its other numbers.</p>
-          <div class="rr-head" role="group" aria-label="Rank by"></div><ol class="ranked" id="bn-rank"></ol></section>
-        <section class="screen bn-chart-screen" aria-labelledby="bn-chart-h"><div class="screen-head"><h3 id="bn-chart-h">Speed against efficiency</h3></div>
-          <div id="bn-chart"></div>
-          <p class="bn-key">${[["b1", "75 and up"], ["b2", "50–75"], ["b3", "25–50"], ["b4", "under 25"]].map(([c, t]) => `<span><i class="${c}"></i>score ${t}</span>`).join("")}</p>
-          <p class="note">Top right is best. Hover or tap a dot for its numbers.</p></section>
-      </div>
-      <p class="note">Values are medians over all rounds; hover one for its range.
-        <span class="key best">Green</span> = best or tied with the best (ranges overlap). ${powerNote}</p>
-      <div class="bn-callouts">${[BENCH_CHAIN_NOTE, BENCH_MTU_NOTE].map(([h, t]) => `<p class="bn-callout"><b>${esc(h)}</b> ${esc(t)}</p>`).join("")}</div>
-      <div class="bn-block"><h3>How we tested</h3>${(I ? BENCH_IPHONE_METHOD : BENCH_LAB_METHOD).map((t) => `<p class="note">${esc(t)}</p>`).join("")}</div>
-      ${appCards ? `<div class="bn-block"><h3>What's inside each app</h3>
-        <p>Grouped by the core that carries the traffic, as found in each installed Mac app. Licenses are from each project's public
-          repository; none shown means closed source or unknown.</p>
-        <div class="cores">${appCards}</div></div>` : ""}
-      <p class="note bn-foot">Independent, non-commercial testing on one Mac and one iPhone, October 2026. Results depend on the device, the OS and
-        the app version; a real network adds its own costs.</p>`;
-    this.ranked();
+    const [title, id, enKey, enUnit] = LABS[this.lab];
+    this.x = this.data.experiments.find((e) => e.id === this.lab);
+    const med = (st) => Object.fromEntries(Object.entries(st).map(([a, v]) => [a, v.median]));
+    this.sc = med(this.stats("lab", "score")); this.sp = med(this.stats("speed", "gbps_avg")); this.en = med(this.stats("down_200", enKey)); this.enUnit = enUnit;
+    const apps = Object.keys(this.sc).sort((p, q) => this.sc[q] - this.sc[p]);
+    $("#m-top").innerHTML = `<ol class="vals">${apps.slice(0, TOP).map((a, i) => `<li><span class="v-n">${i + 1}</span>
+      <span class="v-name"><a href="apps/${benchSlug(a)}.html">${esc(benchName(a))}</a><small>${fmtNum(this.sp[a])} Gbit/s · ${fmtNum(this.en[a])} ${esc(enUnit)}</small></span>
+      <span class="lol" aria-hidden="true"><i style="left:0;width:${this.sc[a].toFixed(1)}%"></i></span>
+      <span class="v-val">${Math.round(this.sc[a])}</span></li>`).join("")}</ol>`;
+    const all = $("#m-all");
+    all.href = `data.html#${id}`; all.textContent = apps.length > TOP ? `See all ${apps.length} apps in a table` : "See the full table";
+    $("#m-chart-title").textContent = `${title}: speed against energy`;
     this.chart();
   },
-  // Real use: the app energy chart through real servers, with its two views as small pills
-  realUse() {
-    $("#bn-body").innerHTML = `
-      <div class="bn-block"><h3>Energy in real use, at 200 Mbit/s</h3><p class="bn-setup">${esc(BENCH_SETUPS.R[1])}</p></div>
-      <section class="screen bn-energy" aria-label="App energy at 200 Mbit/s">
-        <div class="seg seg-sm" id="bn-en-tab" role="radiogroup" aria-label="View">${Object.entries(BENCH_ENERGY).map(([k, [t]]) => `<button type="button" role="radio" data-v="${k}">${esc(t)}</button>`).join("")}</div>
-        <div id="bn-en"></div></section>
-      <p class="note bn-foot">Independent, non-commercial testing on one Mac (MacBook Air M1), October 2026. Results depend on the device, the OS,
-        the app version and the network.</p>`;
-    this.energy();
-  },
-  // app energy bars: one protocol (times Egern), or chain + rules split at the same app's one-hop cost
-  enTab: "one",
-  energy() {
-    $("#bn-en-tab").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", b.dataset.v === this.enTab));
-    const [, per, rows, notes] = BENCH_ENERGY[this.enTab], chain = this.enTab === "chain";
-    const top = Math.max(...rows.map((r) => r[2])) * 1.04, pc = (v) => (v / top * 100).toFixed(2) + "%", base = rows[0][2];
-    const times = (v, b) => { const x = v / b; return (x < 10 ? x.toFixed(1) : Math.round(x)) + "×"; };
-    $("#bn-en").innerHTML = `<ol class="eb">${rows.map(([app, setup, mw, lab, hop]) => {
-      const bar = hop ? `<span class="eb-bar eb-hop" style="width:${pc(hop)}"></span><span class="eb-bar" style="width:${pc(mw - hop)}"></span><i class="eb-cut" style="left:${pc(hop)}"></i>`
-        : `<span class="eb-bar" style="width:${pc(mw)}"></span>`;
-      const val = chain ? `${+mw.toFixed(1)}<small>mW</small>` : `${+mw.toFixed(1)}<small>mW</small> · ${times(mw, base)}`;
-      return `<li class="${lab ? "lab" : ""}${!chain && mw === base ? " best" : ""}"><p class="eb-top"><span><b>${esc(app)}</b> <span>${esc(setup)} · ${lab ? "lab" : "real path"}</span></span>
-        <span class="eb-val">${val}</span></p><div class="eb-track" aria-hidden="true">${bar}</div>
-        ${hop ? `<p class="eb-sub">+${+(mw - hop).toFixed(1)} mW for chain (${times(mw, hop)} one hop)</p>` : ""}</li>`; }).join("")}</ol>
-      <p class="bn-key">${chain ? `<span><i class="k-hop"></i>one hop</span><span><i class="k-real"></i>extra for chain + rules</span><span><i class="k-cut"></i>one-hop cost</span><span><i class="k-lab"></i>lab, total only</span>`
-        : `<span><i class="k-best"></i>Egern</span><span><i class="k-real"></i>real path, Reality</span><span><i class="k-lab"></i>lab, other protocol</span>`}</p>
-      ${notes.map((t) => `<p class="note">${esc(t)}</p>`).join("")}`;
-  },
-  // the ranking: one card per app with score, speed and energy; tap it for the app's details and other numbers
-  ranked() {
-    const cols = BENCH_COLS[this.exp], head = [0, 1, cols.findIndex((c) => /energy_per_gb/.test(c[4]))];
-    const si = this.sort, col = cols[si], [, , , ca0, me0, , hi0] = col;
-    const s = this.stats(ca0, me0);
-    const m0 = (a) => (s[a] || { median: hi0 ? -Infinity : Infinity }).median;
-    const apps = Object.keys(this.x.versions).sort((p, q) => hi0 ? m0(q) - m0(p) : m0(p) - m0(q));
-    const range = (c, a) => { const [, , u, ca, me, sc] = c, v = this.stats(ca, me)[a];
-      return v && v.n > 1 ? `median ${fmtNum(v.median * sc)}, range ${fmtNum(v.min * sc)}–${fmtNum(v.max * sc)} ${u} over ${v.n} rounds` : ""; };
-    const val = (c, a) => { const w = this.stats(c[3], c[4])[a]; return w ? fmtNum(w.median * c[5]) : "–"; };
-
-    $(".rr-head").innerHTML = `<span>App</span>` + head.map((j) => `<button type="button" data-i="${j}" aria-pressed="${j === si}">${esc(benchKey(cols[j]))}<small>${esc(cols[j][2].replace(" per ", "/"))}</small></button>`).join("");
-    const ol = $("#bn-rank");
-    ol.innerHTML = apps.map((a, i) => {
-      const i0 = (this.x.apps || {})[a] || {}, c = BENCH_FLAGS[a];
-      // app info as label/value rows; numbers (version, MTU) in the data font
-      const info = [["Version", `<span class="num">${esc(this.ver(a))}</span>`], ["MTU", i0.mtu ? `<span class="num" title="Tunnel packet size">${i0.mtu}</span>` : ""],
-        ["Developer", c ? `${benchFlag(a)} ${BENCH_COUNTRIES[c]}` : ""], ["Page", `<a href="apps/${benchSlug(a)}.html">All of ${esc(benchName(a))}'s numbers</a>`]]
-        .filter(([, v]) => v).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
-      const rest = cols.filter((_, j) => !head.includes(j)).map((k) =>
-        `<div class="${this.flag(k, a)}"><dt>${esc(benchKey(k))}<span>${esc(k[2])}</span></dt><dd title="${esc(range(k, a))}">${val(k, a)}</dd></div>`).join("");
-      return `<li><details class="rr" data-app="${a}"><summary>
-        <span class="rr-name"><span class="rr-n">${i + 1}</span><span class="rr-t"><b>${esc(benchName(a))}</b>${i0.iphone ? ` <small class="rr-on" title="Also available on iPhone">also on 📱</small>` : ""}</span></span>
-        ${head.map((j) => `<span class="rr-v ${this.flag(cols[j], a)}${j === si ? " on" : ""}" title="${esc(range(cols[j], a))}">${val(cols[j], a)}</span>`).join("")}</summary>
-        <div class="rr-more"><dl class="rr-info">${info}</dl><dl class="rr-all">${rest}</dl></div></details></li>`;
-    }).join("");
-  },
-  // the scatter, redrawn at the width of its screen so text stays readable on a phone
   chart() {
-    const box = $("#bn-chart"), I = this.exp === "I";
-    const med = (st) => Object.fromEntries(Object.entries(st).map(([a, v]) => [a, v.median]));
-    this.sp = med(this.stats("speed", "gbps_avg"));
-    this.en = med(this.stats("down_200", I ? "phone_energy_per_gb" : "tunnel_energy_per_gb"));
+    const box = $("#m-chart");
     this.cw = box.clientWidth;
-    box.innerHTML = benchScatter(this.sp, this.en, med(this.stats("lab", "score")), benchName, Math.max(300, this.cw), ...(I ? [[0.1, 10], [3, 100], "Extra phone energy at 200 Mbit/s"] : []))
-      + `<div class="bn-pop" id="bn-pop" role="dialog" aria-live="polite" hidden></div>`;
-    this.pinned = null;
-    this.pick(this.cur);
+    box.innerHTML = benchScatter(this.sp, this.en, this.sc, benchName, Math.max(300, this.cw), ...(this.lab === "I" ? [[0.1, 10], [3, 100], "Extra phone energy"] : [undefined, undefined, undefined]), this.enUnit)
+      + `<div class="bn-pop" id="bn-pop" aria-hidden="true" hidden></div>`;
+    this.open = null;
   },
-  // ring one app's dot (and mark its ranking card)
-  pick(a) {
-    this.cur = a;
-    document.querySelectorAll("#bn-chart .pt, #bn-rank .rr").forEach((p) => p.classList.toggle("on", p.dataset.app === a));
-  },
-  // the popup next to a dot: the app's info and all its numbers, compact
   pop(a) {
-    const box = $("#bn-chart"), p = $("#bn-pop"), dot = a && box.querySelector(`.pt[data-app="${a}"] .dot`);
-    if (!dot) { p.hidden = true; this.pick(null); return; }
-    this.pick(a);
-    const i0 = (this.x.apps || {})[a] || {}, info = [this.ver(a), i0.mtu ? `MTU ${i0.mtu}` : "", i0.iphone ? "also on 📱" : ""].filter(Boolean);
-    p.innerHTML = `<p class="bn-pop-h"><b>${esc(benchName(a))}</b>${benchFlag(a)}</p><p class="bn-pop-info">${info.map(esc).join(" · ")}</p>
-      <dl>${BENCH_COLS[this.exp].map((c) => { const w = this.stats(c[3], c[4])[a];
-        return `<div class="${this.flag(c, a)}"><dt>${esc(benchKey(c))}</dt><dd>${w ? fmtNum(w.median * c[5]) : "–"}<span>${esc(c[2].replace(/^down, /, "").replace(" per ", "/"))}</span></dd></div>`; }).join("")}</dl>`;
+    this.open = a;
+    const box = $("#m-chart"), p = $("#bn-pop");
+    if (!p) return;
+    box.querySelectorAll(".pt").forEach((g) => g.classList.toggle("on", g.dataset.app === a));
+    const dot = a && box.querySelector(`.pt[data-app="${a}"] .dot`);
+    if (!dot) { p.hidden = true; return; }
+    p.innerHTML = `<b>${esc(benchName(a))}</b><span>Score ${Math.round(this.sc[a])}</span><span>${fmtNum(this.sp[a])} Gbit/s</span><span>${fmtNum(this.en[a])} ${esc(this.enUnit)}</span>`;
     p.hidden = false;
     // right of the dot if it fits, else left; kept inside the chart
     const b = box.getBoundingClientRect(), d = dot.getBoundingClientRect(), x = d.left - b.left + d.width / 2, y = d.top - b.top + d.height / 2;
-    const pw = p.offsetWidth, ph = p.offsetHeight;
-    const left = x + 14 + pw <= b.width ? x + 14 : x - 14 - pw;
+    const pw = p.offsetWidth, ph = p.offsetHeight, left = x + 14 + pw <= b.width ? x + 14 : x - 14 - pw;
     p.style.left = Math.max(0, Math.min(left, b.width - pw)) + "px";
     p.style.top = Math.max(0, Math.min(y - ph / 2, b.height - ph)) + "px";
+  },
+  // energy bars: one protocol, or chain + rules split at the same app's one-hop cost
+  energy() {
+    const [, , rows] = BENCH_ENERGY[this.view], chain = this.view === "chain";
+    const top = Math.max(...rows.map((r) => r[2])) * 1.04, pc = (v) => (v / top * 100).toFixed(2) + "%";
+    $("#m-en").innerHTML = `<ol class="vals plain">${rows.map(([app, setup, mw, lab, hop]) => {
+      const line = hop ? `<i class="one" style="left:0;width:${pc(hop)}"></i><i style="left:${pc(hop)};width:${pc(mw - hop)}"></i>` : `<i style="left:0;width:${pc(mw)}"></i>`;
+      return `<li class="${lab ? "lab" : ""}"><span class="v-name"><b>${esc(app)}</b><small>${esc(setup)}${lab ? " · lab" : ""}</small></span>
+        <span class="lol" aria-hidden="true">${line}</span><span class="v-val">${+mw.toFixed(1)}<small> mW</small></span></li>`; }).join("")}</ol>
+      <p class="key">${chain ? `<span><i class="k-line k-hop"></i>one hop</span><span><i class="k-line k-real"></i>extra for chain + rules</span><span><i class="k-lab"></i>lab, total only</span>`
+        : `<span><i class="k-real"></i>real path</span><span><i class="k-lab"></i>lab, other protocol, rough comparison</span>`}</p>`;
   }
 };
-// lab chart: speed (up) against energy per GB (right = less), both log scales; a darker dot = a higher score
-function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s") {
-  const H = Math.round(W * (W < 420 ? 1.08 : W < 640 ? 0.85 : W < 900 ? 0.62 : 0.4)), L = 46, R = 12, T = 12, B = 44;
+// speed (up) against energy per GB (right = less), both log scales; a darker dot = a higher score
+function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2, 30], xLabel = "Energy at 200 Mbit/s", unit = "J per GB") {
+  const H = Math.round(W * (W < 420 ? 1.08 : W < 640 ? 0.85 : 0.5)), L = 46, R = 12, T = 12, B = 44;
   const apps = Object.keys(sp).filter((a) => en[a]);
   const lg = Math.log10, X = (e) => L + (lg(e1) - lg(e)) / (lg(e1) - lg(e0)) * (W - L - R), Y = (s) => T + (lg(s1) - lg(s)) / (lg(s1) - lg(s0)) * (H - T - B);
   const score = (a) => sc[a] || 0, band = (a) => score(a) >= 75 ? "b1" : score(a) >= 50 ? "b2" : score(a) >= 25 ? "b3" : "b4";
@@ -567,7 +208,7 @@ function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2
   let dots = "", labels = "";
   apps.sort((p, q) => score(q) - score(p)).forEach((a, i) => {
     const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.6 + 2;
-    dots += `<g class="pt ${band(a)}" data-app="${esc(a)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
+    dots += `<g class="pt ${band(a)}" data-app="${esc(a)}" tabindex="0" role="img" aria-label="${esc(name(a))}: score ${Math.round(score(a))}, ${fmtNum(sp[a])} Gbit/s, ${fmtNum(en[a])} ${esc(unit)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
     const at = [[cx + 9, cy - 7, "start"], [cx - 9 - w, cy - 7, "end"], [cx - w / 2, cy - 22, "middle"], [cx - w / 2, cy + 8, "middle"],
       [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"],
       // farther out, joined to the dot by a short line
@@ -578,13 +219,13 @@ function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2
     if (Math.abs(by + 7 - cy) > 15) labels += `<line class="gr lead" x1="${cx}" y1="${cy + (by > cy ? 5 : -5)}" x2="${an === "start" ? bx : bx + w}" y2="${by + (by > cy ? 2 : 12)}"/>`;
     labels += `<text class="lbl" x="${an === "start" ? bx : an === "end" ? bx + w : bx + w / 2}" y="${by + 11}" text-anchor="${an}">${esc(name(a))}</text>`;
   });
-  return `<svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average speed against energy per GB for each app; the ranking has every value.">
-    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">${esc(xLabel)}, J per GB${W < 560 ? "" : " (log), less is better"}</text>
+  return `<svg class="bn-chart" viewBox="0 0 ${W} ${H}" role="group" aria-label="Average speed against energy per GB for each app; the numbers page has every value.">
+    ${g}<text class="ax-t" x="${(L + W - R) / 2}" y="${H - 8}" text-anchor="middle">${esc(xLabel)}, ${esc(unit)}${W < 560 ? "" : " (log), less is better"}</text>
     <text class="ax-t" transform="translate(13 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">Average speed, Gbit/s${W < 560 ? "" : " (log), faster is up"}</text>
     ${labels}${dots}</svg>`;
 }
-function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : a >= 1 ? +v.toFixed(2) + "" : +v.toFixed(3) + ""; }
+function fmtNum(v) { const a = Math.abs(v); return a >= 100 ? Math.round(v).toLocaleString("en") : a >= 10 ? +v.toFixed(1) + "" : +v.toFixed(2) + ""; }
 
-const PAGE_VIEW = { timeline: Timeline, setup: Picks, bench: Bench }[PAGE];
-if (PAGE_VIEW) PAGE_VIEW.init();
-if (PAGE === "timeline") Timeline.layout();
+
+if (document.body.dataset.page === "setup") Routes.init();
+if (document.body.dataset.page === "bench") Bench.init();

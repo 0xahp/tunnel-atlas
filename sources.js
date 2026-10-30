@@ -1,73 +1,32 @@
-/* Tunnel Atlas sources page: references and supporting facts, rendered from data.js. */
+/* Tunnel Atlas sources page: the content is in the HTML (make-static.py); this adds the claim and reference filters. */
+const params = new URLSearchParams(location.search);
+const setParam = (k, v) => { const u = new URL(location); if (v) u.searchParams.set(k, v); else u.searchParams.delete(k); history.replaceState(null, "", u); };
 
-const $ = (s, r = document) => r.querySelector(s);
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
-
-const themeBtn = $("#theme-btn");
-function effectiveTheme() {
-  const t = document.documentElement.dataset.theme;
-  return t || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-}
-/* the button names the theme it switches to */
-const labelTheme = () => { themeBtn.textContent = effectiveTheme() === "dark" ? "Light" : "Dark"; };
-labelTheme();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", labelTheme);
-themeBtn.addEventListener("click", () => {
-  const next = effectiveTheme() === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  try { localStorage.setItem("theme", next); } catch (e) {}
-  labelTheme();
-});
-
-const link = (k) => {
-  const [label, url] = SRC[k];
-  return url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label)}</a>` : `<span>${esc(label)}</span>`;
+/* claims: one verdict at a time */
+const verdicts = document.getElementById("claim-filter");
+const showVerdict = (v) => {
+  verdicts.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+  document.querySelectorAll(".claim").forEach((c) => { c.hidden = v !== "all" && c.dataset.v !== v; });
+  document.querySelectorAll(".claim-topic").forEach((t) => { t.hidden = !t.querySelector(".claim:not([hidden])"); });
 };
-const srcLinks = (keys) => `<div class="src-list">${[...new Set(keys || [])].filter((k) => SRC[k]).map(link).join("")}</div>`;
-const host = (url) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
-const table = (head, rows) => `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table>`;
-
-/* ---------- References, grouped by type and numbered ---------- */
-const GROUPS = [
-  ["Research papers and measurements", ["paper", "data"]],
-  ["Field reports and news", ["forum", "news"]],
-  ["Specifications and documentation", ["docs"]],
-  ["Apps and source code", ["app", "code"]],
-  ["Vendor material", ["vendor"]],
-  ["Unpublished notes", ["local"]]
-];
-let n = 0;
-$("#ref-groups").innerHTML = GROUPS.map(([title, kinds]) => {
-  const keys = Object.keys(SRC).filter((k) => kinds.includes(SRC[k][2])).sort((a, b) => SRC[a][0].localeCompare(SRC[b][0]));
-  if (!keys.length) return "";
-  const items = keys.map((k) => `<li class="ref" data-q="${esc((SRC[k][0] + " " + (SRC[k][1] || "")).toLowerCase())}">
-    <span class="ref-n">${++n}</span>${link(k)}<span class="ref-host">${esc(SRC[k][1] ? host(SRC[k][1]) : "kept private")}</span></li>`).join("");
-  return `<div class="ref-group"><h3>${esc(title)}</h3><ol class="ref-list">${items}</ol></div>`;
-}).join("");
-$("#ref-q").addEventListener("input", (e) => {
-  const q = e.target.value.trim().toLowerCase();
-  let shown = 0;
-  document.querySelectorAll(".ref").forEach((li) => { const on = !q || li.dataset.q.includes(q); li.hidden = !on; shown += on; });
-  document.querySelectorAll(".ref-group").forEach((g) => { g.hidden = !g.querySelector(".ref:not([hidden])"); });
-  $("#ref-empty").hidden = shown > 0;
+verdicts.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  setParam("verdict", b.dataset.v === "all" ? "" : b.dataset.v);
+  showVerdict(b.dataset.v);
 });
+showVerdict(verdicts.querySelector(`[data-v="${params.get("verdict")}"]`) ? params.get("verdict") : "all");
 
-/* ---------- Key figures ---------- */
-$("#fig-table").innerHTML = table(["Figure", "What it measures", "Source"], [
-  ...PERF_FACTS.map(([v, what, k]) => `<tr><td class="fig">${esc(v)}</td><td class="what">${esc(what)}</td><td>${srcLinks([k])}</td></tr>`),
-  ...NUMBERS.map(([what, v, ctx, yr, k]) => `<tr><td class="fig">${esc(v)}</td><td class="what">${esc(what)}<br><span class="note">${esc(ctx)}${yr && yr !== "–" ? ", " + esc(yr) : ""}</span></td><td>${srcLinks([k])}</td></tr>`)
-]);
-
-/* ---------- Censorship matrix ---------- */
-$("#mx-table").innerHTML = `<table class="mx"><thead><tr><th>Technique</th>${MATRIX.countries.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${
-  MATRIX.rows.map(([name, cells]) => `<tr><td class="what">${esc(name)}</td>${cells.map(([s, note]) => {
-    const inf = /unconfirmed|no 2026/i.test(note);
-    return `<td><div class="mx-cell"><span class="st ${s}${inf ? " inf" : ""}" title="${esc(MATRIX.labels[s])}">${esc(MATRIX.labels[s][0])}</span><span>${esc(note || MATRIX.labels[s])}</span></div></td>`;
-  }).join("")}</tr>`).join("")}</tbody></table>`;
-
-/* ---------- Claims ---------- */
-$("#claim-table").innerHTML = table(["Claim", "Verdict", "Finding"], CLAIMS.map((c) =>
-  `<tr><td class="what">${esc(c.claim)}<br><span class="note">${esc(c.topic)}</span></td><td><span class="verdict ${c.v}">${esc(VERDICTS[c.v].label)}</span></td><td>${esc(c.finding)}${srcLinks(c.src)}</td></tr>`));
-
-/* ---------- Notes ---------- */
-$("#notes-list").innerHTML = CAVEATS.map((c) => `<li>${esc(c)}</li>`).join("");
+/* references: search opens the groups that match */
+const refQ = document.getElementById("ref-q"), refCount = document.getElementById("ref-count");
+const refs = [...document.querySelectorAll(".ref")];
+const findRefs = () => {
+  const q = refQ.value.trim().toLowerCase();
+  let shown = 0;
+  refs.forEach((li) => { const on = !q || li.textContent.toLowerCase().includes(q); li.hidden = !on; shown += on; });
+  document.querySelectorAll(".ref-group").forEach((g) => { const any = g.querySelector(".ref:not([hidden])"); g.hidden = !any; if (q) g.open = !!any; else g.open = false; });
+  refCount.textContent = q ? (shown ? `${shown} of ${refs.length} references` : "No reference matches that search.") : `${refs.length} references`;
+};
+refQ.value = params.get("q") || "";
+refQ.addEventListener("input", () => { setParam("q", refQ.value.trim()); findRefs(); });
+findRefs();

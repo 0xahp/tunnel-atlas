@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>Egern: speed and battery benchmark (Mac/iPhone) · Tunnel Atlas</title>
 <meta name="description" content="Egern proxy app benchmark, Oct 2026: 4th of 24 on a Mac (3.87 Gbit/s, 0.263 J/GB) and 1st of 7 on an iPhone (2.46 Gbit/s, 6.2 J/GB extra).">
 <link rel="canonical" href="https://0xahp.github.io/tunnel-atlas/apps/egern.html">
@@ -21,49 +22,34 @@
 <meta name="twitter:description" content="Egern proxy app benchmark, Oct 2026: 4th of 24 on a Mac (3.87 Gbit/s, 0.263 J/GB) and 1st of 7 on an iPhone (2.46 Gbit/s, 6.2 J/GB extra).">
 <meta name="twitter:image" content="https://0xahp.github.io/tunnel-atlas/assets/og.png">
 <meta name="twitter:image:alt" content="Tunnel Atlas: proxy client app benchmark, speed and energy per GB on a Mac">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://0xahp.github.io/tunnel-atlas/apps/egern.html","url":"https://0xahp.github.io/tunnel-atlas/apps/egern.html","name":"Egern: speed and battery benchmark (Mac/iPhone) · Tunnel Atlas","description":"Egern proxy app benchmark, Oct 2026: 4th of 24 on a Mac (3.87 Gbit/s, 0.263 J/GB) and 1st of 7 on an iPhone (2.46 Gbit/s, 6.2 J/GB extra).","inLanguage":"en","dateModified":"2026-10-27","isPartOf":{"@id":"https://0xahp.github.io/tunnel-atlas/#website"},"about":{"@id":"https://0xahp.github.io/tunnel-atlas/#dataset"},"author":{"@type":"Person","name":"0xahp","url":"https://github.com/0xahp"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Benchmark","item":"https://0xahp.github.io/tunnel-atlas/"},{"@type":"ListItem","position":2,"name":"Egern","item":"https://0xahp.github.io/tunnel-atlas/apps/egern.html"}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://0xahp.github.io/tunnel-atlas/apps/egern.html","url":"https://0xahp.github.io/tunnel-atlas/apps/egern.html","name":"Egern: speed and battery benchmark (Mac/iPhone) · Tunnel Atlas","description":"Egern proxy app benchmark, Oct 2026: 4th of 24 on a Mac (3.87 Gbit/s, 0.263 J/GB) and 1st of 7 on an iPhone (2.46 Gbit/s, 6.2 J/GB extra).","inLanguage":"en","dateModified":"2026-10-30","isPartOf":{"@id":"https://0xahp.github.io/tunnel-atlas/#website"},"about":{"@id":"https://0xahp.github.io/tunnel-atlas/#dataset"},"author":{"@type":"Person","name":"0xahp","url":"https://github.com/0xahp"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Benchmark","item":"https://0xahp.github.io/tunnel-atlas/"},{"@type":"ListItem","position":2,"name":"Egern","item":"https://0xahp.github.io/tunnel-atlas/apps/egern.html"}]}]}</script>
 <script data-goatcounter="https://tunnel-atlas.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
 <link rel="stylesheet" href="../styles.css">
 <script>document.documentElement.classList.add("js"); try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 </head>
 <body data-page="app">
+<a class="skip" href="#main">Skip to content</a>
 <header class="mast">
-  <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true"></span>Tunnel Atlas</a>
-  <p class="mast-sub">Proxy app benchmark, best setups and 58 VPN techniques · Oct 2026</p>
-  <nav class="mast-tools" aria-label="Site">
-    <button class="tool-link" id="theme-btn" type="button" aria-label="Switch light or dark theme">Theme</button>
-  </nav>
+  <a class="brand" href="../index.html"><svg class="brand-mark" viewBox="0 0 26 14" aria-hidden="true"><path d="M0 12h5V2h6v10h4V2h3v10h8" fill="none" stroke="currentColor" stroke-width="2"/></svg>Tunnel Atlas</a>
+  <div class="theme" id="theme"><button type="button" id="theme-btn" aria-label="Theme: Auto" aria-expanded="false" aria-controls="theme-menu"><svg class="i-auto" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 2.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><svg class="i-light" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="3.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><svg class="i-dark" viewBox="0 0 18 18" aria-hidden="true"><path d="M15 10.8A6.5 6.5 0 0 1 7.2 3a6.5 6.5 0 1 0 7.8 7.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button><ul id="theme-menu" hidden><li><button type="button" data-v="auto" aria-pressed="false"><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 2.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>Auto</button></li><li><button type="button" data-v="light" aria-pressed="false"><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="3.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Light</button></li><li><button type="button" data-v="dark" aria-pressed="false"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M15 10.8A6.5 6.5 0 0 1 7.2 3a6.5 6.5 0 1 0 7.8 7.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Dark</button></li></ul></div>
+  <nav class="tabs" aria-label="Sections"><a href="../index.html" aria-current="page">Benchmark</a><a href="../routes.html">Routes</a><a href="../timeline.html">Timeline</a></nav>
 </header>
 
-<div class="shell">
-  <nav class="rail" aria-label="Sections">
-    <div class="rail-tabs">
-      <a href="../index.html" aria-current="page">
-        <span class="tab-name">Benchmark</span><span class="tab-hint">speed and energy, 24 Mac and 7 iPhone apps</span></a>
-      <a href="../routes.html">
-        <span class="tab-name">Routes</span><span class="tab-hint">best 2026 setups for 3 situations, traffic flow</span></a>
-      <a href="../timeline.html">
-        <span class="tab-name">Timeline</span><span class="tab-hint">58 techniques, 1995–2026, censorship status</span></a>
-    </div>
-    <p class="rail-foot">Every figure links to its source on the <a href="../sources.html">sources page</a>.</p>
-  </nav>
-
-  <main>
-    <section class="pane" id="app">
-      <nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Benchmark</a> <span aria-hidden="true">›</span> <span aria-current="page">Egern</span></nav>
-      <div class="sec-head">
-        <h1>Egern: speed and battery benchmark</h1>
-        <p class="lede">Egern ranked 4th of 24 apps in our Mac lab and 1st of 7 apps in our iPhone lab, by a score that weighs speed 30% and energy efficiency 70%. Every app was tested the same way, one at a time, with a test server on the device itself.</p>
-      </div>
+<main class="page" id="main">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Benchmark</a> <span aria-hidden="true">›</span> <span aria-current="page">Egern</span></nav>
+  <div class="sec-head">
+    <h1>Egern: speed and battery benchmark</h1>
+    <p class="lede">Egern ranked 4th of 24 apps in our Mac lab and 1st of 7 apps in our iPhone lab, by a score that weighs speed 30% and energy efficiency 70%. Every app was tested the same way, one at a time, with a test server on the device itself.</p>
+  </div>
       <div class="bn-block">
         <h2 class="app-h">Mac lab: 4th of 24</h2>
         <p class="bn-setup">Each app tunnels traffic to a test server on the same Mac, so no network is in the way and the numbers show the app&#x27;s own cost. Ranked by speed (30%) and energy efficiency (70%).</p>
         <dl class="bn-meta"><div><dt>Version</dt><dd>2.20.0</dd></div><div><dt>Rank</dt><dd>4 of 24</dd></div><div><dt>Score</dt><dd>64.2 of 100</dd></div><div><dt>MTU</dt><dd>4000</dd></div><div><dt>Also on</dt><dd>iPhone</dd></div></dl>
-        <div class="table-wrap screen app-table"><table><thead><tr><th>Measure</th><th class="num">Median</th><th>Unit</th><th class="num">Range</th><th class="num">Rank</th></tr></thead>
-          <tbody><tr><td>Score</td><td class="num">64.2</td><td>of 100</td><td class="num">–</td><td class="num">4 of 24</td></tr><tr><td>Average speed</td><td class="num">3.87</td><td>Gbit/s</td><td class="num">3.81–3.92</td><td class="num">11 of 24</td></tr><tr><td>Upload, 1 connection</td><td class="num">3.4</td><td>Gbit/s</td><td class="num">3.4–3.4</td><td class="num">12 of 24</td></tr><tr><td>Download, 1 connection</td><td class="num">4.42</td><td>Gbit/s</td><td class="num">4.28–4.57</td><td class="num">10 of 24</td></tr><tr><td>Upload, 4 connections</td><td class="num">3.38</td><td>Gbit/s</td><td class="num">3.36–3.4</td><td class="num">13 of 24</td></tr><tr><td>Download, 4 connections</td><td class="num">4.4</td><td>Gbit/s</td><td class="num">4.33–4.48</td><td class="num">11 of 24</td></tr><tr><td>Energy at 200 Mbit/s</td><td class="num">0.263</td><td>J per GB</td><td class="num">0.259–0.267</td><td class="num">1 of 24</td></tr><tr><td>CPU at 200 Mbit/s</td><td class="num">4.25</td><td>s per GB</td><td class="num">4.24–4.25</td><td class="num">1 of 24</td></tr><tr><td>Memory at 200 Mbit/s</td><td class="num">6.67</td><td>MB</td><td class="num">6.64–6.7</td><td class="num">1 of 24</td></tr></tbody></table></div>
+        <div class="table-wrap screen" tabindex="0" role="region" aria-label="Egern, Mac lab"><table><caption class="vh">Egern, Mac lab</caption><thead><tr><th scope="col">Measure</th><th scope="col" class="num">Median</th><th scope="col">Unit</th><th scope="col" class="num">Range</th><th scope="col" class="num">Rank</th></tr></thead>
+          <tbody><tr><th scope="row">Score</th><td class="num">64.2</td><td>of 100</td><td class="num">–</td><td class="num">4 of 24</td></tr><tr><th scope="row">Average speed</th><td class="num">3.87</td><td>Gbit/s</td><td class="num">3.81–3.92</td><td class="num">11 of 24</td></tr><tr><th scope="row">Upload, 1 connection</th><td class="num">3.4</td><td>Gbit/s</td><td class="num">3.4–3.4</td><td class="num">12 of 24</td></tr><tr><th scope="row">Download, 1 connection</th><td class="num">4.42</td><td>Gbit/s</td><td class="num">4.28–4.57</td><td class="num">10 of 24</td></tr><tr><th scope="row">Upload, 4 connections</th><td class="num">3.38</td><td>Gbit/s</td><td class="num">3.36–3.4</td><td class="num">13 of 24</td></tr><tr><th scope="row">Download, 4 connections</th><td class="num">4.4</td><td>Gbit/s</td><td class="num">4.33–4.48</td><td class="num">11 of 24</td></tr><tr><th scope="row">Energy at 200 Mbit/s</th><td class="num">0.263</td><td>J per GB</td><td class="num">0.259–0.267</td><td class="num">1 of 24</td></tr><tr><th scope="row">CPU at 200 Mbit/s</th><td class="num">4.25</td><td>s per GB</td><td class="num">4.24–4.25</td><td class="num">1 of 24</td></tr><tr><th scope="row">Memory at 200 Mbit/s</th><td class="num">6.67</td><td>MB</td><td class="num">6.64–6.7</td><td class="num">1 of 24</td></tr></tbody></table></div>
         <p class="note">Medians over 2 rounds (range = lowest to highest round); the score comes from the medians. Rank 1 = best of the 24 apps in this lab.</p>
         <h3>What's inside</h3><p class="bn-setup">Core: <b>Own core</b> (no sing-box, Xray or mihomo inside). IP stack: own user-space stack (vendor&#x27;s note, 2.15). License: closed source or unknown.</p>
       </div>
@@ -71,25 +57,22 @@
         <h2 class="app-h">iPhone lab: 1st of 7</h2>
         <p class="bn-setup">The same test on an iPhone: the server runs inside a test app on the phone, so only the VPN app is in the way. Ranked by speed (30%) and energy efficiency (70%).</p>
         <dl class="bn-meta"><div><dt>Version</dt><dd>2.20.0</dd></div><div><dt>Rank</dt><dd>1 of 7</dd></div><div><dt>Score</dt><dd>91.8 of 100</dd></div></dl>
-        <div class="table-wrap screen app-table"><table><thead><tr><th>Measure</th><th class="num">Median</th><th>Unit</th><th class="num">Range</th><th class="num">Rank</th></tr></thead>
-          <tbody><tr><td>Score</td><td class="num">91.8</td><td>of 100</td><td class="num">–</td><td class="num">1 of 7</td></tr><tr><td>Average speed</td><td class="num">2.46</td><td>Gbit/s</td><td class="num">2.43–2.46</td><td class="num">2 of 7</td></tr><tr><td>Upload, 1 connection</td><td class="num">2.14</td><td>Gbit/s</td><td class="num">2.13–2.14</td><td class="num">2 of 7</td></tr><tr><td>Download, 1 connection</td><td class="num">2.7</td><td>Gbit/s</td><td class="num">2.61–2.77</td><td class="num">1 of 7</td></tr><tr><td>Upload, 4 connections</td><td class="num">2.21</td><td>Gbit/s</td><td class="num">2.2–2.24</td><td class="num">2 of 7</td></tr><tr><td>Download, 4 connections</td><td class="num">2.82</td><td>Gbit/s</td><td class="num">2.81–2.83</td><td class="num">2 of 7</td></tr><tr><td>Power added at 200 Mbit/s</td><td class="num">155</td><td>mW</td><td class="num">44.2–221</td><td class="num">1 of 7</td></tr><tr><td>Extra energy at 200 Mbit/s</td><td class="num">6.2</td><td>J per GB</td><td class="num">1.77–8.85</td><td class="num">1 of 7</td></tr><tr><td>CPU at 200 Mbit/s</td><td class="num">6.87</td><td>s per GB</td><td class="num">6.81–6.9</td><td class="num">1 of 7</td></tr><tr><td>Memory at 200 Mbit/s</td><td class="num">6.33</td><td>MB</td><td class="num">5.33–6.35</td><td class="num">3 of 7</td></tr><tr><td>Power added at idle</td><td class="num">95.6</td><td>mW</td><td class="num">-17.5–102</td><td class="num">5 of 7</td></tr><tr><td>Wakeups at idle</td><td class="num">4</td><td>per s</td><td class="num">4–4</td><td class="num">2 of 7</td></tr></tbody></table></div>
+        <div class="table-wrap screen" tabindex="0" role="region" aria-label="Egern, iPhone lab"><table><caption class="vh">Egern, iPhone lab</caption><thead><tr><th scope="col">Measure</th><th scope="col" class="num">Median</th><th scope="col">Unit</th><th scope="col" class="num">Range</th><th scope="col" class="num">Rank</th></tr></thead>
+          <tbody><tr><th scope="row">Score</th><td class="num">91.8</td><td>of 100</td><td class="num">–</td><td class="num">1 of 7</td></tr><tr><th scope="row">Average speed</th><td class="num">2.46</td><td>Gbit/s</td><td class="num">2.43–2.46</td><td class="num">2 of 7</td></tr><tr><th scope="row">Upload, 1 connection</th><td class="num">2.14</td><td>Gbit/s</td><td class="num">2.13–2.14</td><td class="num">2 of 7</td></tr><tr><th scope="row">Download, 1 connection</th><td class="num">2.7</td><td>Gbit/s</td><td class="num">2.61–2.77</td><td class="num">1 of 7</td></tr><tr><th scope="row">Upload, 4 connections</th><td class="num">2.21</td><td>Gbit/s</td><td class="num">2.2–2.24</td><td class="num">2 of 7</td></tr><tr><th scope="row">Download, 4 connections</th><td class="num">2.82</td><td>Gbit/s</td><td class="num">2.81–2.83</td><td class="num">2 of 7</td></tr><tr><th scope="row">Power added at 200 Mbit/s</th><td class="num">155</td><td>mW</td><td class="num">44.2–221</td><td class="num">1 of 7</td></tr><tr><th scope="row">Extra energy at 200 Mbit/s</th><td class="num">6.2</td><td>J per GB</td><td class="num">1.77–8.85</td><td class="num">1 of 7</td></tr><tr><th scope="row">CPU at 200 Mbit/s</th><td class="num">6.87</td><td>s per GB</td><td class="num">6.81–6.9</td><td class="num">1 of 7</td></tr><tr><th scope="row">Memory at 200 Mbit/s</th><td class="num">6.33</td><td>MB</td><td class="num">5.33–6.35</td><td class="num">3 of 7</td></tr><tr><th scope="row">Power added at idle</th><td class="num">95.6</td><td>mW</td><td class="num">-17.5–102</td><td class="num">5 of 7</td></tr><tr><th scope="row">Wakeups at idle</th><td class="num">4</td><td>per s</td><td class="num">4–4</td><td class="num">2 of 7</td></tr></tbody></table></div>
         <p class="note">Medians over 3 rounds (range = lowest to highest round); the score comes from the medians. Rank 1 = best of the 7 apps in this lab.</p>
         <p class="note">sing-box (SFI) 1.14.7 was added on 22 Oct from one round, against no-VPN steps in the same session (0.83 W under load, 0.78 W idle). An Egern round in that session matched its earlier figures: speed within 2%, the same CPU, wakeups and memory, 0.06 W extra. Its profile sends apple.com traffic direct, so iOS could check the test app while the VPN was on.</p>
       </div>
       <div class="bn-block">
         <h2 class="app-h">Energy in real use, at 200 Mbit/s</h2>
         <p class="bn-setup">The app&#x27;s own energy, as macOS estimates it for the app&#x27;s processes, at a 200 Mbit/s download (J per GB × 25). Real path = through real servers over the internet; the 14–15 Oct runs were at 100 Mbit/s, assuming the same energy per GB. Lab = a test server on the same Mac.</p>
-        <div class="table-wrap screen app-table"><table><thead><tr><th>View</th><th>Setup</th><th>Test</th><th class="num">mW</th></tr></thead><tbody><tr><td>One protocol</td><td>Reality one hop</td><td>real path</td><td class="num">7.6</td></tr><tr><td>Chain + rules</td><td>Reality chain</td><td>real path</td><td class="num">23.3</td></tr><tr><td>Chain + rules</td><td>Hysteria2 chain</td><td>lab</td><td class="num">78</td></tr></tbody></table></div>
+        <div class="table-wrap screen" tabindex="0" role="region" aria-label="Egern, real use"><table><caption class="vh">Egern, real use</caption><thead><tr><th scope="col">View</th><th scope="col">Setup</th><th scope="col">Test</th><th scope="col" class="num">mW</th></tr></thead><tbody><tr><th scope="row">One protocol</th><td>Reality one hop</td><td>real path</td><td class="num">7.6</td></tr><tr><th scope="row">Chain + rules</th><td>Reality chain</td><td>real path</td><td class="num">23.3</td></tr><tr><th scope="row">Chain + rules</th><td>Hysteria2 chain</td><td>lab</td><td class="num">78</td></tr></tbody></table></div>
         <p class="note">Aestate was measured on 27 Oct at about 185 Mbit/s; Egern read 9 mW in that same run, so Aestate used about 5.4× Egern&#x27;s energy on the day.</p><p class="note">Egern&#x27;s Hysteria2 chain is from a lab test on 25 Oct; Hysteria2 alone was not measured, so it has no split. In that lab Egern&#x27;s Reality chain read 15 mW, so a real path may read higher.</p>
       </div>
-      <p class="note bn-foot">Independent, non-commercial testing on one Mac and one iPhone, October 2026. Results depend on the device, the OS and
-        the app version; a real network adds its own costs. <a href="../index.html">All 25 apps, the chart and how we tested</a>.</p>
-    </section>
+  <p class="note bn-foot">Independent, non-commercial testing on one Mac and one iPhone, October 2026. Results depend on the device, the OS and
+    the app version; a real network adds its own costs. <a href="../index.html">All 25 apps and the ranking</a>.</p>
+</main>
+<footer class="site-foot"><a href="../data.html">All the numbers</a><a href="../sources.html">Sources and method</a><span>Independent, non-commercial testing, October 2026.</span></footer>
 
-    <p class="site-foot">Every figure links to its source on the <a href="../sources.html">sources page</a>.</p>
-  </main>
-</div>
-
-<script src="../site.js"></script>
+<script src="../common.js"></script>
 </body>
 </html>
