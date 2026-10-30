@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="422" viewBox="0 0 800 422" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="800" height="422" rx="12" fill="#f4f2eb"/>
+<text x="32" y="46" font-family="Iowan Old Style, Georgia, serif" font-size="24" font-weight="500" fill="#1f1e1c">The hungriest app uses 55 times the energy of the lightest</text>
+<text x="32" y="72" font-size="14" fill="#6b665d">Energy per GB on a Mac at 200 Mbit/s, for eight of the 24 apps tested</text>
+<text x="32" y="121" font-size="15" font-weight="600" fill="#1f1e1c">Egern</text>
+<line x1="180" x2="636" y1="116" y2="116" stroke="#d3ccbf"/>
+<line x1="180.0" x2="188.0" y1="116" y2="116" stroke="#8a660c" stroke-width="2"/><circle cx="188.0" cy="116" r="6" fill="#8a660c"/>
+<text x="768" y="121" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">0.26<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="157" font-size="15" font-weight="600" fill="#1f1e1c">Throne</text>
+<line x1="180" x2="636" y1="152" y2="152" stroke="#d3ccbf"/>
+<line x1="180.0" x2="188.7" y1="152" y2="152" stroke="#8a660c" stroke-width="2"/><circle cx="188.7" cy="152" r="6" fill="#8a660c"/>
+<text x="768" y="157" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">0.29<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="193" font-size="15" font-weight="600" fill="#1f1e1c">Surge</text>
+<line x1="180" x2="636" y1="188" y2="188" stroke="#d3ccbf"/>
+<line x1="180.0" x2="194.1" y1="188" y2="188" stroke="#8a660c" stroke-width="2"/><circle cx="194.1" cy="188" r="6" fill="#8a660c"/>
+<text x="768" y="193" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">0.46<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="229" font-size="15" font-weight="600" fill="#1f1e1c">Shadowrocket</text>
+<line x1="180" x2="636" y1="224" y2="224" stroke="#d3ccbf"/>
+<line x1="180.0" x2="196.3" y1="224" y2="224" stroke="#8a660c" stroke-width="2"/><circle cx="196.3" cy="224" r="6" fill="#8a660c"/>
+<text x="768" y="229" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">0.54<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="265" font-size="15" font-weight="600" fill="#1f1e1c">Anywhere</text>
+<line x1="180" x2="636" y1="260" y2="260" stroke="#d3ccbf"/>
+<line x1="180.0" x2="202.7" y1="260" y2="260" stroke="#8a660c" stroke-width="2"/><circle cx="202.7" cy="260" r="6" fill="#8a660c"/>
+<text x="768" y="265" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">0.75<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="301" font-size="15" font-weight="600" fill="#1f1e1c">V2Box</text>
+<line x1="180" x2="636" y1="296" y2="296" stroke="#d3ccbf"/>
+<line x1="180.0" x2="408.4" y1="296" y2="296" stroke="#8a660c" stroke-width="2"/><circle cx="408.4" cy="296" r="6" fill="#8a660c"/>
+<text x="768" y="301" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">7.52<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="337" font-size="15" font-weight="600" fill="#1f1e1c">Streisand</text>
+<line x1="180" x2="636" y1="332" y2="332" stroke="#d3ccbf"/>
+<line x1="180.0" x2="567.6" y1="332" y2="332" stroke="#8a660c" stroke-width="2"/><circle cx="567.6" cy="332" r="6" fill="#8a660c"/>
+<text x="768" y="337" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">12.76<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="373" font-size="15" font-weight="600" fill="#1f1e1c">Happ</text>
+<line x1="180" x2="636" y1="368" y2="368" stroke="#d3ccbf"/>
+<line x1="180.0" x2="622.7" y1="368" y2="368" stroke="#8a660c" stroke-width="2"/><circle cx="622.7" cy="368" r="6" fill="#8a660c"/>
+<text x="768" y="373" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">14.58<tspan font-size="12.5" font-weight="400" fill="#6b665d"> J per GB</tspan></text>
+<text x="32" y="408" font-size="12.5" fill="#6b665d">Tunnel Atlas, October 2026. MacBook Air M1, same Shadowsocks 2022 profile, server on the same Mac.</text></svg>

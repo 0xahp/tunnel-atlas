@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="276" viewBox="0 0 800 276" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="800" height="276" rx="12" fill="#f4f2eb"/>
+<text x="32" y="46" font-family="Iowan Old Style, Georgia, serif" font-size="24" font-weight="500" fill="#1f1e1c">A chain of two proxies uses about 3 times the energy</text>
+<text x="32" y="72" font-size="14" fill="#6b665d">App energy at 200 Mbit/s on a Mac through real servers, with Reality as the outer protocol</text>
+<text x="32" y="121" font-size="15" font-weight="600" fill="#1f1e1c">Egern</text>
+<line x1="180" x2="636" y1="116" y2="116" stroke="#d3ccbf"/>
+<line x1="180" x2="212.5" y1="116" y2="116" stroke="#8c8578" stroke-width="2"/>
+<line x1="212.5" x2="279.6" y1="116" y2="116" stroke="#8a660c" stroke-width="2"/><circle cx="279.6" cy="116" r="6" fill="#8a660c"/>
+<text x="768" y="121" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">23.3<tspan font-size="12.5" font-weight="400" fill="#6b665d"> mW</tspan></text>
+<text x="32" y="157" font-size="15" font-weight="600" fill="#1f1e1c">Shadowrocket</text>
+<line x1="180" x2="636" y1="152" y2="152" stroke="#d3ccbf"/>
+<line x1="180" x2="324.0" y1="152" y2="152" stroke="#8c8578" stroke-width="2"/>
+<line x1="324.0" x2="609.0" y1="152" y2="152" stroke="#8a660c" stroke-width="2"/><circle cx="609.0" cy="152" r="6" fill="#8a660c"/>
+<text x="768" y="157" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">100.4<tspan font-size="12.5" font-weight="400" fill="#6b665d"> mW</tspan></text>
+<text x="32" y="193" font-size="15" font-weight="600" fill="#1f1e1c">Anywhere</text>
+<line x1="180" x2="636" y1="188" y2="188" stroke="#d3ccbf"/>
+<line x1="180" x2="281.3" y1="188" y2="188" stroke="#8c8578" stroke-width="2"/>
+<line x1="281.3" x2="622.7" y1="188" y2="188" stroke="#8a660c" stroke-width="2"/><circle cx="622.7" cy="188" r="6" fill="#8a660c"/>
+<text x="768" y="193" text-anchor="end" font-size="15.5" font-weight="500" fill="#1f1e1c">103.6<tspan font-size="12.5" font-weight="400" fill="#6b665d"> mW</tspan></text>
+<line x1="32" x2="50" y1="220" y2="220" stroke="#8c8578" stroke-width="2"/><text x="58" y="224.5" font-size="13" fill="#6b665d">one proxy</text>
+<line x1="143" x2="161" y1="220" y2="220" stroke="#8a660c" stroke-width="2"/><text x="169" y="224.5" font-size="13" fill="#6b665d">extra for the chain and routing rules</text>
+<text x="32" y="256" font-size="12.5" fill="#6b665d">Tunnel Atlas, October 2026. MacBook Air M1. Anywhere: one hop on 2.3, chain on 2.4.</text></svg>
