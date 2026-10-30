@@ -1,41 +1,25 @@
-/* Tunnel Atlas: the figures in the Benchmark and Routes posts. The prose is in the pages; the full tables are on data.html.
-   Each figure holds one choice at most, and that choice lives in the URL (?lab=iphone, ?view=chain, ?censor=2). */
+/* Tunnel Atlas: the Benchmark and Routes posts. The prose and figures are in the HTML (make-static.py); this switches between the choices in a figure
+   and draws the chart. Each figure holds one choice at most, and that choice lives in the URL (?lab=iphone, ?view=chain, ?censor=2). */
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
-const srcLinks = (keys) => `<div class="src-list">${[...new Set(keys || [])].filter((k) => SRC[k] && SRC[k][1])
-  .map((k) => `<a href="${esc(SRC[k][1])}"${/^https?:/.test(SRC[k][1]) ? ' target="_blank" rel="noopener"' : ""}>${esc(SRC[k][0])}</a>`).join("")}</div>`;
 const params = new URLSearchParams(location.search);
 const setParam = (k, v, dflt) => { const u = new URL(location); if (v === dflt) u.searchParams.delete(k); else u.searchParams.set(k, v); history.replaceState(null, "", u); };
-// a row of pills; only their pressed state changes on a click, so focus stays on the button
-const seg = (label, opts, cur) => `<div class="seg" role="group" aria-label="${esc(label)}">${opts.map(([v, t]) => `<button type="button" data-v="${esc(v)}" aria-pressed="${v === cur}">${esc(t)}</button>`).join("")}</div>`;
-const pressSeg = (el, cur) => el.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === cur));
+// only the pressed state and the visible choice change on a click, so focus stays on the button
+const showPick = (box, cur) => {
+  box.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === cur));
+  box.querySelectorAll("[data-pick]").forEach((p) => p.classList.toggle("on", p.dataset.pick === cur));
+};
+const onPill = (box, fn) => $(".seg", box).addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) fn(b.dataset.v); });
 
 /* ==================== Routes: one figure per situation ==================== */
-const PICK_ROUTES = { efficient: ["vpn", "vpn", "selfsteal"], censor: ["selfsteal", "quic", "cdn"], blackout: ["relay", "cdn", "dns"] };
 const Routes = {
   init() {
     document.querySelectorAll(".m-path").forEach((box) => {
-      const goal = box.dataset.goal, items = PICKS[goal].items, i0 = Math.min(+params.get(goal) || 0, items.length - 1);
-      box.innerHTML = seg("Setup", items.map((p, i) => [String(i), p.rank]), String(i0)) + `<div class="pick-detail"></div>`;
-      box.querySelector(".seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
-        setParam(goal, b.dataset.v, "0"); pressSeg(box, b.dataset.v); this.detail(box, goal, +b.dataset.v); });
-      this.detail(box, goal, i0);
+      const goal = box.dataset.goal, last = box.querySelectorAll("[data-pick]").length - 1;
+      showPick(box, String(Math.min(+params.get(goal) || 0, last)));
+      onPill(box, (v) => { setParam(goal, v, "0"); showPick(box, v); });
     });
-  },
-  detail(box, goal, i) {
-    const p = PICKS[goal].items[i], id = PICK_ROUTES[goal][i], r = ROUTES[id], n = r.hops.length;
-    const tun = (k) => k < n - 1 && r.enc.some(([a, b]) => a <= k && k < b);
-    $(".pick-detail", box).innerHTML = `
-      <h3 class="pick-h">${esc(p.proto)}</h3><p>${esc(p.why)}</p>
-      ${p.server ? `<p class="fig-note">Server: ${esc(p.server)}</p>` : ""}
-      <p class="fig-note">The path, ${esc(r.name)}. The gold line is the encrypted span; the red ring is the filter.</p>
-      <ol class="path">${r.hops.map((h, k) => `<li class="hop ${esc(h.zone)}${tun(k) ? " tun" : ""}"><b>${esc(h.title)}</b><span>${esc(h.sub)}</span></li>`).join("")}</ol>
-      <dl class="facts"><div><dt>Censor sees</dt><dd>${esc(r.sees)}</dd></div><div><dt>Servers</dt><dd>${esc(r.extra)}</dd></div><div><dt>Delay</dt><dd>${esc(r.latency)}</dd></div></dl>
-      <div class="pc"><div><h4>Good</h4><ul>${r.pros.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
-        <div><h4>Watch out</h4><ul>${r.cons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div></div>
-      ${srcLinks(p.src)}
-      <a class="raw" href="data.html#route-${esc(id)}">See who sees what at each hop</a>`;
   }
 };
 
@@ -65,11 +49,11 @@ const BENCH_CORES = [
 const BENCH_ENERGY = {
   one: ["One protocol", "times Egern", [["Egern", "Reality one hop", 7.6], ["Anywhere", "Reality one hop", 23.7], ["Shadowrocket", "Reality one hop", 33.7],
     ["Aestate", "Reality one hop", 47.4], ["WireGuard app 1.0.16", "WireGuard", 170, 1], ["V2Box", "Shadowsocks", 188, 1], ["Happ", "Shadowsocks", 365, 1]],
-    ["Lighter bars are lab tests on other protocols, so they compare only roughly with the real-path bars.",
+    ["Lab tests used other protocols, so they compare only roughly with the real-path results.",
       "Aestate was measured on 27 Oct at about 185 Mbit/s; Egern read 9 mW in that same run, so Aestate used about 5.4× Egern's energy on the day."]],
   chain: ["Chain + rules", "times the one hop", [["Egern", "Reality chain", 23.3, 0, 7.6], ["Egern", "Hysteria2 chain", 78, 1], ["Shadowrocket", "Reality chain", 100.4, 0, 33.7],
     ["Anywhere", "Reality chain", 103.6, 0, 23.7]],
-    ["Chain: the outer protocol to a first server, Shadowsocks inside it to a second, plus everyday routing rules. Gray is the same app's one-hop cost, up to the dashed line; gold is the extra for the chain and rules.",
+    ["Chain: the outer protocol to a first server, Shadowsocks inside it to a second, plus everyday routing rules.",
       "Egern's Hysteria2 chain is from a lab test on 25 Oct; Hysteria2 alone was not measured, so it has no split. In that lab Egern's Reality chain read 15 mW, so a real path may read higher.",
       "Anywhere's chain was measured on version 2.4, its one hop on 2.3. Aestate has no domain routing, so it has no chain."]]
 };
@@ -107,36 +91,38 @@ const benchName = (a) => BENCH_NAMES[a] || a;
 // the app's page: apps/<name in lower case, dashes>.html, written by make-static.py (same rule there)
 const benchSlug = (a) => benchName(a).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const LABS = { L: ["Mac lab", "mac", "tunnel_energy_per_gb", "J per GB"], I: ["iPhone lab", "iphone", "phone_energy_per_gb", "extra J per GB"] };
-const TOP = 5;
 const Bench = {
   lab: params.get("lab") === "iphone" ? "I" : "L",
   view: params.get("view") === "chain" ? "chain" : "one",
   async init() {
-    const en = $("#m-energy");
-    en.innerHTML = seg("View", Object.entries(BENCH_ENERGY).map(([k, [t]]) => [k, t]), this.view) + `<div id="m-en"></div>`;
-    $(".seg", en).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
-      this.view = b.dataset.v; setParam("view", this.view, "one"); pressSeg(en, this.view); this.energy(); });
-    this.energy();
+    const en = $("#m-energy"), rank = $("#m-rank"), box = $("#m-chart");
+    showPick(en, this.view); showPick(rank, this.lab);
+    onPill(en, (v) => { this.view = v; setParam("view", v, "one"); showPick(en, v); });
+    onPill(rank, (v) => { this.lab = v; setParam("lab", LABS[v][1], "mac"); showPick(rank, v); if (this.data) this.render(); });
     try {
       const r = await fetch("bench/experiments.json");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       this.data = await r.json();
     } catch (e) {
-      const msg = `<div class="empty"><p>The results did not load (${esc(e.message)}). Reload the page, or read them on the <a href="data.html">numbers page</a>.</p></div>`;
-      $("#m-rank").innerHTML = msg; $("#m-chart").innerHTML = msg;
+      box.innerHTML = `<div class="empty"><p>The chart did not load (${esc(e.message)}). Reload the page, or read the results on the <a href="data.html">numbers page</a>.</p></div>`;
       return;
     }
-    const rank = $("#m-rank");
-    rank.innerHTML = seg("Lab", Object.entries(LABS).map(([k, l]) => [k, l[0]]), this.lab) + `<div id="m-top"></div><a class="raw" id="m-all"></a>`;
-    $(".seg", rank).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
-      this.lab = b.dataset.v; setParam("lab", LABS[this.lab][1], "mac"); pressSeg(rank, this.lab); this.render(); });
     // the popup: tap or focus a dot, hover with a mouse; Esc or a tap elsewhere closes it
-    const box = $("#m-chart");
     box.addEventListener("click", (e) => { const p = e.target.closest(".pt"); if (p) { this.pop(p.dataset.app); e.stopPropagation(); } });
     box.addEventListener("focusin", (e) => { const p = e.target.closest(".pt"); if (p) this.pop(p.dataset.app); });
     box.addEventListener("focusout", () => this.pop(null));
     box.addEventListener("pointerover", (e) => { const p = e.target.closest(".pt"); if (p && e.pointerType === "mouse") this.pop(p.dataset.app); });
     box.addEventListener("pointerout", (e) => { if (e.target.closest(".pt") && e.pointerType === "mouse") this.pop(null); });
+    // one tab stop for the whole chart; arrow keys walk the dots, best score first
+    box.addEventListener("keydown", (e) => {
+      const p = e.target.closest(".pt");
+      if (!p) return;
+      const pts = [...box.querySelectorAll(".pt")], i = pts.indexOf(p), j = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: pts.length - 1 }[e.key];
+      if (j === undefined) return;
+      e.preventDefault();
+      const next = pts[(j + pts.length) % pts.length];
+      p.setAttribute("tabindex", "-1"); next.setAttribute("tabindex", "0"); next.focus();
+    });
     addEventListener("click", () => this.pop(null));
     addEventListener("keydown", (e) => { if (e.key === "Escape") this.pop(null); });
     addEventListener("resize", () => { if (box.clientWidth !== this.cw) this.chart(); });
@@ -144,17 +130,10 @@ const Bench = {
   },
   stats(ca, me) { return (this.x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {}; },
   render() {
-    const [title, id, enKey, enUnit] = LABS[this.lab];
+    const [title, , enKey, enUnit] = LABS[this.lab];
     this.x = this.data.experiments.find((e) => e.id === this.lab);
     const med = (st) => Object.fromEntries(Object.entries(st).map(([a, v]) => [a, v.median]));
     this.sc = med(this.stats("lab", "score")); this.sp = med(this.stats("speed", "gbps_avg")); this.en = med(this.stats("down_200", enKey)); this.enUnit = enUnit;
-    const apps = Object.keys(this.sc).sort((p, q) => this.sc[q] - this.sc[p]);
-    $("#m-top").innerHTML = `<ol class="vals">${apps.slice(0, TOP).map((a, i) => `<li><span class="v-n">${i + 1}</span>
-      <span class="v-name"><a href="apps/${benchSlug(a)}.html">${esc(benchName(a))}</a><small>${fmtNum(this.sp[a])} Gbit/s · ${fmtNum(this.en[a])} ${esc(enUnit)}</small></span>
-      <span class="lol" aria-hidden="true"><i style="left:0;width:${this.sc[a].toFixed(1)}%"></i></span>
-      <span class="v-val">${Math.round(this.sc[a])}</span></li>`).join("")}</ol>`;
-    const all = $("#m-all");
-    all.href = `data.html#${id}`; all.textContent = apps.length > TOP ? `See all ${apps.length} apps in a table` : "See the full table";
     $("#m-chart-title").textContent = `${title}: speed against energy`;
     this.chart();
   },
@@ -179,17 +158,6 @@ const Bench = {
     const pw = p.offsetWidth, ph = p.offsetHeight, left = x + 14 + pw <= b.width ? x + 14 : x - 14 - pw;
     p.style.left = Math.max(0, Math.min(left, b.width - pw)) + "px";
     p.style.top = Math.max(0, Math.min(y - ph / 2, b.height - ph)) + "px";
-  },
-  // energy bars: one protocol, or chain + rules split at the same app's one-hop cost
-  energy() {
-    const [, , rows] = BENCH_ENERGY[this.view], chain = this.view === "chain";
-    const top = Math.max(...rows.map((r) => r[2])) * 1.04, pc = (v) => (v / top * 100).toFixed(2) + "%";
-    $("#m-en").innerHTML = `<ol class="vals plain">${rows.map(([app, setup, mw, lab, hop]) => {
-      const line = hop ? `<i class="one" style="left:0;width:${pc(hop)}"></i><i style="left:${pc(hop)};width:${pc(mw - hop)}"></i>` : `<i style="left:0;width:${pc(mw)}"></i>`;
-      return `<li class="${lab ? "lab" : ""}"><span class="v-name"><b>${esc(app)}</b><small>${esc(setup)}${lab ? " · lab" : ""}</small></span>
-        <span class="lol" aria-hidden="true">${line}</span><span class="v-val">${+mw.toFixed(1)}<small> mW</small></span></li>`; }).join("")}</ol>
-      <p class="key">${chain ? `<span><i class="k-line k-hop"></i>one hop</span><span><i class="k-line k-real"></i>extra for chain + rules</span><span><i class="k-lab"></i>lab, total only</span>`
-        : `<span><i class="k-real"></i>real path</span><span><i class="k-lab"></i>lab, other protocol, rough comparison</span>`}</p>`;
   }
 };
 // speed (up) against energy per GB (right = less), both log scales; a darker dot = a higher score
@@ -208,7 +176,7 @@ function benchScatter(sp, en, sc, name, W, [s0, s1] = [0.2, 30], [e0, e1] = [0.2
   let dots = "", labels = "";
   apps.sort((p, q) => score(q) - score(p)).forEach((a, i) => {
     const cx = X(en[a]), cy = Y(sp[a]), w = name(a).length * 6.6 + 2;
-    dots += `<g class="pt ${band(a)}" data-app="${esc(a)}" tabindex="0" role="img" aria-label="${esc(name(a))}: score ${Math.round(score(a))}, ${fmtNum(sp[a])} Gbit/s, ${fmtNum(en[a])} ${esc(unit)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
+    dots += `<g class="pt ${band(a)}" data-app="${esc(a)}" tabindex="${i ? -1 : 0}" role="img" aria-label="${esc(name(a))}: score ${Math.round(score(a))}, ${fmtNum(sp[a])} Gbit/s, ${fmtNum(en[a])} ${esc(unit)}"><circle class="hit" cx="${cx}" cy="${cy}" r="12"/><circle class="ring" cx="${cx}" cy="${cy}" r="11"/><circle class="dot" cx="${cx}" cy="${cy}" r="5"/></g>`;
     const at = [[cx + 9, cy - 7, "start"], [cx - 9 - w, cy - 7, "end"], [cx - w / 2, cy - 22, "middle"], [cx - w / 2, cy + 8, "middle"],
       [cx + 7, cy - 19, "start"], [cx + 7, cy + 5, "start"], [cx - 7 - w, cy - 19, "end"], [cx - 7 - w, cy + 5, "end"],
       // farther out, joined to the dot by a short line

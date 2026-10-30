@@ -1,4 +1,4 @@
-/* Tunnel Atlas, every page: the theme menu (Auto by default; the page head applies a saved choice before first paint)
+/* Tunnel Atlas, every page: the theme menu (System by default; the page head applies a saved choice before first paint)
    and the post's contents list. Light and dark follow prefers-color-scheme in styles.css, so nothing here watches the system setting. */
 const themeBtn = document.getElementById("theme-btn"), themeMenu = document.getElementById("theme-menu");
 const showTheme = (v) => {

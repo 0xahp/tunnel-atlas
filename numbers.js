@@ -21,6 +21,8 @@ groups.forEach((g) => {
     const b = e.target.closest("button");
     if (!b) return;
     show(g, b.dataset.v);
+    // a leftover #hash would reopen its own panel on reload, over the choice in the query
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
     setParam(g.dataset.panels, b.dataset.v === ps[0].dataset.panel ? "" : b.dataset.v);
     ["q", "sort", "all"].forEach((k) => setParam(k, ""));
     document.querySelectorAll("[data-sortable]").forEach(reset);
@@ -38,6 +40,7 @@ function openHash() {
 addEventListener("hashchange", openHash);
 
 /* ---------- tables: sort, search, all columns ---------- */
+const headings = (t) => t.tHead.rows[t.tHead.rows.length - 1];   // a group row may sit above them
 const cellValue = (row, i) => { const c = row.cells[i], v = c.dataset.v; return v === undefined ? c.textContent.trim().toLowerCase() : +v; };
 function sortBy(t, i, dir) {
   const body = t.tBodies[0], sign = dir === "ascending" ? 1 : -1;
@@ -47,10 +50,12 @@ function sortBy(t, i, dir) {
     if (y === "–") return -1;
     return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y))) * sign;
   }).forEach((r) => body.append(r));
-  t.querySelectorAll("thead th").forEach((th, k) => { if (k === i) th.setAttribute("aria-sort", dir); else th.removeAttribute("aria-sort"); });
+  [...headings(t).cells].forEach((th, k) => { if (k === i) th.setAttribute("aria-sort", dir); else th.removeAttribute("aria-sort"); });
 }
 function search(t) {
-  const box = t.closest(".panel-table"), q = $find(box).value.trim().toLowerCase(), rows = [...t.tBodies[0].rows];
+  const box = t.closest(".panel-table");
+  if (!$find(box)) return;
+  const q = $find(box).value.trim().toLowerCase(), rows = [...t.tBodies[0].rows];
   let shown = 0;
   rows.forEach((r) => { const on = !q || r.cells[0].textContent.toLowerCase().includes(q); r.hidden = !on; shown += on; });
   box.querySelector(".count").textContent = shown ? `${shown} of ${rows.length} ${t.dataset.noun}` : `No ${t.dataset.noun} match that search.`;
@@ -58,7 +63,7 @@ function search(t) {
 const $find = (box) => box.querySelector("input[type=search]");
 function reset(t) {
   const box = t.closest(".panel-table"), first = t.dataset.sort.split(":");
-  $find(box).value = "";
+  if ($find(box)) $find(box).value = "";
   t.classList.remove("all");
   const more = box.querySelector("[data-more]");
   if (more) more.setAttribute("aria-pressed", "false");
@@ -67,7 +72,7 @@ function reset(t) {
 }
 document.querySelectorAll("[data-sortable]").forEach((t) => {
   const box = t.closest(".panel-table"), more = box.querySelector("[data-more]");
-  t.querySelectorAll("thead th").forEach((th, i) => {
+  [...headings(t).cells].forEach((th, i) => {
     const b = document.createElement("button");
     b.type = "button";
     b.append(...th.childNodes);
@@ -78,7 +83,7 @@ document.querySelectorAll("[data-sortable]").forEach((t) => {
       setParam("sort", `${i}:${dir}`);
     });
   });
-  $find(box).addEventListener("input", () => { search(t); setParam("q", $find(box).value.trim()); });
+  if ($find(box)) $find(box).addEventListener("input", () => { search(t); setParam("q", $find(box).value.trim()); });
   if (more) more.addEventListener("click", () => {
     const on = t.classList.toggle("all");
     more.setAttribute("aria-pressed", on);
@@ -86,8 +91,8 @@ document.querySelectorAll("[data-sortable]").forEach((t) => {
   });
   reset(t);
   if (box.closest("[data-panel]").checkVisibility && !box.closest("[hidden]")) {
-    if (params.get("q")) $find(box).value = params.get("q");
-    if (params.get("sort")) { const [i, dir] = params.get("sort").split(":"); if (t.tHead.rows[0].cells[+i]) sortBy(t, +i, dir); }
+    if (params.get("q") && $find(box)) $find(box).value = params.get("q");
+    if (params.get("sort")) { const [i, dir] = params.get("sort").split(":"); if (headings(t).cells[+i]) sortBy(t, +i, dir); }
     if (params.get("all") && more) more.click();
     search(t);
   }
