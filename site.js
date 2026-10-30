@@ -24,7 +24,7 @@ const Routes = {
 };
 
 /* ==================== Benchmark ====================
-   Reads bench/experiments.json. The Mac and iPhone labs, never pooled. */
+   Draws from #bench-data, the chart's numbers that make-static.py puts in the page. The Mac and iPhone labs, never pooled. */
 const BENCH_NAMES = { anywhere: "Anywhere", sfm: "SFM", happ: "Happ", v2box: "V2Box", shadowrocket: "Shadowrocket", egern: "Egern", karing: "Karing", rabbithole: "Rabbit Hole",
   throne: "Throne", surge: "Surge", flclash: "FlClash", verge: "Clash Verge Rev", koala: "Koala Clash", clash: "Clash (Hako)", onexray: "OneXray",
   streisand: "Streisand", incy: "incy", clashplus: "Clash Plus", cli: "sing-box CLI", hiddify: "Hiddify", v2rayn: "v2rayN",
@@ -90,23 +90,16 @@ const BENCH_IPHONE_METHOD = [
 const benchName = (a) => BENCH_NAMES[a] || a;
 // the app's page: apps/<name in lower case, dashes>.html, written by make-static.py (same rule there)
 const benchSlug = (a) => benchName(a).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const LABS = { L: ["Mac lab", "mac", "tunnel_energy_per_gb", "J per GB"], I: ["iPhone lab", "iphone", "phone_energy_per_gb", "extra J per GB"] };
+const LABS = { L: ["Mac lab", "mac", "J per GB"], I: ["iPhone lab", "iphone", "extra J per GB"] };
 const Bench = {
   lab: params.get("lab") === "iphone" ? "I" : "L",
   view: params.get("view") === "chain" ? "chain" : "one",
-  async init() {
+  init() {
     const en = $("#m-energy"), rank = $("#m-rank"), box = $("#m-chart");
+    this.data = JSON.parse($("#bench-data").textContent);
     showPick(en, this.view); showPick(rank, this.lab);
     onPill(en, (v) => { this.view = v; setParam("view", v, "one"); showPick(en, v); });
-    onPill(rank, (v) => { this.lab = v; setParam("lab", LABS[v][1], "mac"); showPick(rank, v); if (this.data) this.render(); });
-    try {
-      const r = await fetch("bench/experiments.json");
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      this.data = await r.json();
-    } catch (e) {
-      box.innerHTML = `<div class="empty"><p>The chart did not load (${esc(e.message)}). Reload the page, or read the results on the <a href="data.html">numbers page</a>.</p></div>`;
-      return;
-    }
+    onPill(rank, (v) => { this.lab = v; setParam("lab", LABS[v][1], "mac"); showPick(rank, v); this.render(); });
     // the popup: tap or focus a dot, hover with a mouse; Esc or a tap elsewhere closes it
     box.addEventListener("click", (e) => { const p = e.target.closest(".pt"); if (p) { this.pop(p.dataset.app); e.stopPropagation(); } });
     box.addEventListener("focusin", (e) => { const p = e.target.closest(".pt"); if (p) this.pop(p.dataset.app); });
@@ -126,14 +119,11 @@ const Bench = {
     addEventListener("click", () => this.pop(null));
     addEventListener("keydown", (e) => { if (e.key === "Escape") this.pop(null); });
     addEventListener("resize", () => { if (box.clientWidth !== this.cw) this.chart(); });
-    this.render();
+    afterPaint(() => this.render());
   },
-  stats(ca, me) { return (this.x.metrics.find((m) => m.case === ca && m.metric === me) || {}).stats || {}; },
   render() {
-    const [title, , enKey, enUnit] = LABS[this.lab];
-    this.x = this.data.experiments.find((e) => e.id === this.lab);
-    const med = (st) => Object.fromEntries(Object.entries(st).map(([a, v]) => [a, v.median]));
-    this.sc = med(this.stats("lab", "score")); this.sp = med(this.stats("speed", "gbps_avg")); this.en = med(this.stats("down_200", enKey)); this.enUnit = enUnit;
+    const [title, , enUnit] = LABS[this.lab];
+    Object.assign(this, this.data[this.lab], { enUnit });
     $("#m-chart-title").textContent = `${title}: speed against energy`;
     this.chart();
   },

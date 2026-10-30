@@ -1,5 +1,7 @@
 /* Tunnel Atlas, every page: the theme menu (System by default; the page head applies a saved choice before first paint)
    and the post's contents list. Light and dark follow prefers-color-scheme in styles.css, so nothing here watches the system setting. */
+// for work that reads layout at load: once the first frame is out, layout is already done, so the read forces nothing
+const afterPaint = (fn) => requestAnimationFrame(() => setTimeout(fn));
 const themeBtn = document.getElementById("theme-btn"), themeMenu = document.getElementById("theme-menu");
 const showTheme = (v) => {
   themeMenu.querySelectorAll("button").forEach((b) => {
@@ -43,5 +45,5 @@ if (tocLinks.length) {
   ["wheel", "touchmove", "keydown"].forEach((t) => addEventListener(t, () => { clicked = false; }, { passive: true }));
   addEventListener("scroll", queue, { passive: true });
   addEventListener("resize", queue);
-  update();
+  afterPaint(update);
 }

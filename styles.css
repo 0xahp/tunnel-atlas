@@ -230,8 +230,6 @@ td.num, th.num { text-align: right; white-space: nowrap; }
 .st-table td, .st-table thead th { text-align: center; padding-inline: 0.25rem; }
 .nums td, .nums thead th { white-space: nowrap; }
 .st-table td:first-child, .st-table th:first-child { text-align: left; }
-.empty { border: 1px dashed var(--ctl); border-radius: 12px; padding: 1rem 1.25rem; }
-.empty p { margin: 0; }
 
 /* ---------- The numbers page: one dataset, one table at a time ---------- */
 .numbers { max-width: 74rem; margin: 0 auto; }   /* wide enough for every measure of the app tables at 1280px */
